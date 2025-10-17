@@ -18,14 +18,5 @@ public class SimpleCtiApplication {
         SpringApplication.run(SimpleCtiApplication.class, args);
     }
 
-    @Bean
-    public CommandLineRunner commandLine_runner(AmiService amiService) {
-        return args -> {
-            // Give the connection a moment to establish before checking its state
-            logger.info("Waiting 1 second for AMI connection to establish...");
-            Thread.sleep(1000);
 
-            amiService.printDialplan();
-        };
-    }
 }

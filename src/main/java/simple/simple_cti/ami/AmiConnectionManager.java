@@ -10,22 +10,21 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 
-@Component
 public class AmiConnectionManager {
     private static final Logger logger = LoggerFactory.getLogger(AmiConnectionManager.class);
     private static ManagerConnection managerConnection;
 
-    @Value("${asterisk.host}")
-    private String host;
+    private final String host;
+    private final String username;
+    private final String password;
 
-    @Value("${asterisk.username}")
-    private String username;
+    public AmiConnectionManager(String host, String username, String password) {
+        this.host = host;
+        this.username = username;
+        this.password = password;
+    }
 
-    @Value("${asterisk.password}")
-    private String password;
-
-    @PostConstruct
-    private void connect() {
+    public void connect() {
         try {
             ManagerConnectionFactory factory = new ManagerConnectionFactory(host, username, password);
             this.managerConnection = factory.createManagerConnection();
