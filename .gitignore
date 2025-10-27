@@ -1,2 +1,65 @@
+# Keep application.properties out of git
 src/main/resources/application.properties
-/build
+
+# Gradle
+.gradle/
+build/
+
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Ignore Gradle cache
+.gradletasknamecache
+
+# Ignore Gradle wrapper jar file, but not the wrapper properties
+!gradle-wrapper.jar
+
+# Java
+*.class
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse
+.settings/
+.project
+.classpath
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.loadpath
+.factorypath
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
