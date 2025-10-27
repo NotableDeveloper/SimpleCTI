@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
+@Service
 public class AmiService {
     private static final Logger logger = LoggerFactory.getLogger(AmiService.class);
     private final AmiConnectionManager connectionManager;

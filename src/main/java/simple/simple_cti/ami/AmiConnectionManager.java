@@ -10,20 +10,21 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 
+@Component
 public class AmiConnectionManager {
-    private static final Logger logger = LoggerFactory.getLogger(AmiConnectionManager.class);
-    private static ManagerConnection managerConnection;
+    private final Logger logger = LoggerFactory.getLogger(AmiConnectionManager.class);
+    private ManagerConnection managerConnection;
 
-    private final String host;
-    private final String username;
-    private final String password;
+    @Value("${asterisk.host}")
+    private String host;
 
-    public AmiConnectionManager(String host, String username, String password) {
-        this.host = host;
-        this.username = username;
-        this.password = password;
-    }
+    @Value("${asterisk.username}")
+    private String username;
 
+    @Value("${asterisk.password}")
+    private String password;
+
+    @PostConstruct
     public void connect() {
         try {
             ManagerConnectionFactory factory = new ManagerConnectionFactory(host, username, password);
@@ -37,13 +38,13 @@ public class AmiConnectionManager {
     }
 
     @PreDestroy
-    private void disconnect() {
+    public void disconnect() {
         if (this.managerConnection != null && this.managerConnection.getState() != ManagerConnectionState.DISCONNECTED) {
             this.managerConnection.logoff();
         }
     }
 
-    public static ManagerConnection getManagerConnection() {
+    public ManagerConnection getManagerConnection() {
         return managerConnection;
     }
 
