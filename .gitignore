@@ -17,6 +17,9 @@ gradle-app.setting
 # Java
 *.class
 
+# Gemini
+gemini.md
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
