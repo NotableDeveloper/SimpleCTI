@@ -4,6 +4,8 @@ import org.asteriskjava.manager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
@@ -14,6 +16,7 @@ import java.io.IOException;
 public class AmiConnectionManager {
     private final Logger logger = LoggerFactory.getLogger(AmiConnectionManager.class);
     private ManagerConnection managerConnection;
+    private final ApplicationContext context;
 
     @Value("${asterisk.host}")
     private String host;
@@ -24,6 +27,10 @@ public class AmiConnectionManager {
     @Value("${asterisk.password}")
     private String password;
 
+    public AmiConnectionManager(ApplicationContext context) {
+        this.context = context;
+    }
+
     @PostConstruct
     public void connect() {
         try {
@@ -32,8 +39,8 @@ public class AmiConnectionManager {
             managerConnection.login();
             logger.info("AMI connection process initiated by AmiConnectionManager.");
         } catch (IOException | AuthenticationFailedException | TimeoutException | IllegalStateException e) {
-            logger.error("AmiConnectionManager failed to connect to Asterisk", e);
-            throw new RuntimeException(e);
+            logger.error("AmiConnectionManager failed to connect to Asterisk. Shutting down application.", e);
+            SpringApplication.exit(context, () -> 1);
         }
     }
 
