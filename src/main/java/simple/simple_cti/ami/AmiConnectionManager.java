@@ -59,6 +59,7 @@ public class AmiConnectionManager {
         if (this.managerConnection == null) {
             return ManagerConnectionState.DISCONNECTED;
         }
+
         return this.managerConnection.getState();
     }
 }
