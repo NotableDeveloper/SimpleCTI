@@ -70,6 +70,24 @@
             font-size: 16px;
             color: #1c1e21;
         }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .keypad button {
+            padding: 20px;
+            font-size: 24px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            background-color: #f0f2f5;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .keypad button:hover {
+            background-color: #e4e6e9;
+        }
     </style>
 </head>
 <body>
@@ -82,10 +100,37 @@
             </div>
             <button type="submit" class="button">Call</button>
         </form>
+        <div class="keypad">
+            <button onclick="appendNumber('1')">1</button>
+            <button onclick="appendNumber('2')">2</button>
+            <button onclick="appendNumber('3')">3</button>
+            <button onclick="appendNumber('4')">4</button>
+            <button onclick="appendNumber('5')">5</button>
+            <button onclick="appendNumber('6')">6</button>
+            <button onclick="appendNumber('7')">7</button>
+            <button onclick="appendNumber('8')">8</button>
+            <button onclick="appendNumber('9')">9</button>
+            <button onclick="clearInput()">Clear</button>
+            <button onclick="appendNumber('0')">0</button>
+            <button onclick="backspace()">&lt;-</button>
+        </div>
         <div id="response"></div>
     </div>
 
     <script>
+        function appendNumber(number) {
+            document.getElementById('targetNumber').value += number;
+        }
+
+        function clearInput() {
+            document.getElementById('targetNumber').value = '';
+        }
+
+        function backspace() {
+            const targetNumber = document.getElementById('targetNumber');
+            targetNumber.value = targetNumber.value.slice(0, -1);
+        }
+
         document.getElementById('originateForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const targetNumber = document.getElementById('targetNumber').value;
