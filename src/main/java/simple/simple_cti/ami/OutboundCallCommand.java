@@ -53,6 +53,7 @@ public class OutboundCallCommand {
         originateAction.setTimeout(30000L);
         originateAction.setCallerId(MainNumber);
         originateAction.setAccount(Account);
+        originateAction.setAsync(true);
 
         logger.info("Sending OriginateAction to Asterisk: {}", originateAction);
         ManagerResponse response = connection.sendAction(originateAction);

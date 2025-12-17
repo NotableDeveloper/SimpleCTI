@@ -17,6 +17,7 @@ public class DialController {
 
     public DialController(OutboundCallCommand outboundCallCommand) {
         this.outboundCallCommand = outboundCallCommand;
+
     }
 
     @PostMapping("/originate")
