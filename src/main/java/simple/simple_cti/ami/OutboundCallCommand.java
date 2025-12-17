@@ -1,6 +1,5 @@
 package simple.simple_cti.ami;
 
-
 import org.asteriskjava.manager.ManagerConnection;
 import org.asteriskjava.manager.ManagerConnectionState;
 import org.asteriskjava.manager.action.OriginateAction;
@@ -12,8 +11,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
-public class OriginateCommandExecutor {
-    private static final Logger logger = LoggerFactory.getLogger(OriginateCommandExecutor.class);
+public class OutboundCallCommand {
+    private static final Logger logger = LoggerFactory.getLogger(OutboundCallCommand.class);
 
     private final AmiConnectionManager amiConnectionManager;
 
@@ -32,7 +31,7 @@ public class OriginateCommandExecutor {
     @Value("${outbound.account}")
     private String Account;
 
-    public OriginateCommandExecutor(AmiConnectionManager amiConnectionManager) {
+    public OutboundCallCommand(AmiConnectionManager amiConnectionManager) {
         this.amiConnectionManager = amiConnectionManager;
     }
 

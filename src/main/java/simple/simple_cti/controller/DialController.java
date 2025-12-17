@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import simple.simple_cti.ami.OriginateCommandExecutor;
+import simple.simple_cti.ami.OutboundCallCommand;
 import org.asteriskjava.manager.response.ManagerResponse;
 
 import java.util.HashMap;
@@ -13,10 +13,10 @@ import java.util.Map;
 @RestController
 public class DialController {
 
-    private final OriginateCommandExecutor originateCommandExecutor;
+    private final OutboundCallCommand outboundCallCommand;
 
-    public DialController(OriginateCommandExecutor originateCommandExecutor) {
-        this.originateCommandExecutor = originateCommandExecutor;
+    public DialController(OutboundCallCommand outboundCallCommand) {
+        this.outboundCallCommand = outboundCallCommand;
     }
 
     @PostMapping("/originate")
@@ -24,7 +24,7 @@ public class DialController {
     public Map<String, Object> originate(@RequestParam String targetNumber) {
         Map<String, Object> response = new HashMap<>();
         try {
-            ManagerResponse managerResponse = originateCommandExecutor.executeOriginate(targetNumber);
+            ManagerResponse managerResponse = outboundCallCommand.executeOriginate(targetNumber);
 
             response.put("success", true);
             response.put("message", "Call initiated successfully!");
