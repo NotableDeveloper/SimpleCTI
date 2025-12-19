@@ -114,9 +114,8 @@
             <button onclick="appendNumber('0')">0</button>
             <button onclick="backspace()">&lt;-</button>
         </div>
-        <div id="response"></div>
-    </div>
 
+    </div>
     <script>
         function appendNumber(number) {
             document.getElementById('targetNumber').value += number;
@@ -134,8 +133,6 @@
         document.getElementById('originateForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const targetNumber = document.getElementById('targetNumber').value;
-            const responseDiv = document.getElementById('response');
-            responseDiv.textContent = 'Calling ' + targetNumber + '...';
 
             fetch('/originate', {
                 method: 'POST',
@@ -146,11 +143,10 @@
             })
             .then(response => response.json())
             .then(data => {
-                responseDiv.textContent = 'Call initiated: ' + data.message;
+                console.log('Call initiated success:', data.success);
             })
             .catch(error => {
                 console.error('Error:', error);
-                responseDiv.textContent = 'Error initiating call.';
             });
         });
     </script>

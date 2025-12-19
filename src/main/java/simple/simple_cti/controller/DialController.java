@@ -25,14 +25,10 @@ public class DialController {
     public Map<String, Object> originate(@RequestParam String targetNumber) {
         Map<String, Object> response = new HashMap<>();
         try {
-            ManagerResponse managerResponse = outboundCallCommand.executeOriginate(targetNumber);
-
+            outboundCallCommand.executeOriginate(targetNumber);
             response.put("success", true);
-            response.put("message", "Call initiated successfully!");
-            response.put("amiResponse", managerResponse.getResponse());
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "Failed to initiate call: " + e.getMessage());
         }
         return response;
     }
