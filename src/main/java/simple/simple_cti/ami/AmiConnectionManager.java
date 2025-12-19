@@ -1,5 +1,6 @@
 package simple.simple_cti.ami;
 
+import org.asteriskjava.AsteriskVersion;
 import org.asteriskjava.manager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,11 +56,27 @@ public class AmiConnectionManager {
         return managerConnection;
     }
 
+    public String getHost() {
+        return host;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
     public ManagerConnectionState getConnectionState() {
         if (this.managerConnection == null) {
             return ManagerConnectionState.DISCONNECTED;
         }
 
         return this.managerConnection.getState();
+    }
+
+    public String getAsteriskVersion() {
+        if (this.managerConnection == null) {
+            return "N/A";
+        }
+
+        return this.managerConnection.getVersion().toString();
     }
 }

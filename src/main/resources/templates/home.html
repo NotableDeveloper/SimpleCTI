@@ -16,7 +16,10 @@
             min-height: 100vh;
         }
         .container {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centers items horizontally */
+            text-align: center; /* Keep for older browser support or inline text */
             background-color: #ffffff;
             padding: 40px;
             border-radius: 8px;
@@ -27,11 +30,11 @@
         h1 {
             color: #1c1e21;
             font-size: 28px;
-            margin-bottom: 16px;
+            margin-bottom: 16px; /* Spacing below heading */
         }
         .button {
             display: inline-block;
-            margin-top: 20px;
+            margin-top: 20px; /* Spacing above button */
             padding: 10px 20px;
             background-color: #007bff;
             color: white;
@@ -46,14 +49,47 @@
         .button:hover {
             background-color: #0056b3;
         }
+        .status-panel {
+            margin-top: 30px; /* Spacing above status panel */
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            text-align: left;
+            /* display: inline-block; -- Removed, flex item will take care of display */
+            min-width: 250px;
+        }
+        .status-panel h2 {
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #495057;
+            text-align: center;
+        }
+        .status-panel p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .status-panel strong {
+            color: #343a40;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Simple CTI</h1>
-        <form action="/navigateToDial" method="post">
-            <button type="submit" class="button">Call</button>
-        </form>
+
+        <div class="status-panel">
+            <h2>Connection Status</h2>
+            <p><strong>Host:</strong> <span th:text="${host}">N/A</span></p>
+            <p><strong>User:</strong> <span th:text="${username}">N/A</span></p>
+            <p><strong>State:</strong> <span th:text="${connectionState}">UNKNOWN</span></p>
+            <p><strong>Version:</strong> <span th:text="${asteriskVersion}">N/A</span></p>
+        </div>
+        
+        <a href="/dial" class="button">Call</a>
     </div>
 </body>
 </html>
