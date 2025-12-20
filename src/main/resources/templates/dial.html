@@ -283,24 +283,49 @@
 
             ua.on('newRTCSession', (data) => {
                 const newSession = data.session;
+                console.log('[UA] Event: newRTCSession');
 
                 // 이미 통화 중인 경우 종료 (Busy)
                 if (session) {
-                    newSession.terminate();
+                    console.log('[UA] A session is already active. Terminating the new incoming session.');
+                    newSession.terminate({
+                        'status_code': 486,
+                        'reason_phrase': 'Busy Here'
+                    });
                     return;
                 }
 
                 session = newSession;
                 
                 if (session.direction === 'incoming') {
-                    console.log("Incoming call from " + session.remote_identity.uri);
-                    updateStatus('Incoming Call: Auto-Answering...', 'status-registered');
-                    
-                    // 자동 수신 (마이크 권한 필요)
-                    const options = {
-                        'mediaConstraints' : { 'audio': true, 'video': false }
-                    };
-                    session.answer(options);
+                    console.log(`[SESSION] Incoming call from ${session.remote_identity.uri}.`);
+                    updateStatus(`Incoming Call from ${session.remote_identity.display_name || session.remote_identity.uri.user}`, 'status-registered');
+
+                    // 마이크 권한을 얻고 스트림을 가져옵니다.
+                    console.log('[SESSION] Requesting microphone access for incoming call...');
+                    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                        .then(stream => {
+                            console.log('[SESSION] Microphone access granted for incoming call.');
+                            
+                            // 자동 수신 (마이크 스트림 포함)
+                            const options = {
+                                mediaStream: stream
+                            };
+                            console.log('[SESSION] Answering call with options:', options);
+                            session.answer(options);
+
+                             // Release mic when the call ends
+                            session.on('ended', () => stream.getTracks().forEach(track => track.stop()));
+                            session.on('failed', () => stream.getTracks().forEach(track => track.stop()));
+                        })
+                        .catch(err => {
+                            console.error("[SESSION] Failed to get local stream for incoming call", err);
+                            alert("마이크를 사용할 수 없어 전화를 받을 수 없습니다: " + err.message);
+                            session.terminate({
+                                'status_code': 480,
+                                'reason_phrase': 'Temporarily Unavailable'
+                            });
+                        });
                 }
 
                 setupSessionEvents(session);
@@ -311,33 +336,60 @@
 
         function makeCall() {
             const target = document.getElementById('targetNumber').value;
-            if (!target || !ua) return;
+            if (!target || !ua) {
+                alert("Please connect to SIP first and enter a target number.");
+                return;
+            }
+            console.log(`[makeCall] Starting call to ${target}`);
 
-            const eventHandlers = {
-                'progress': function(e) { console.log('Call is in progress'); },
-                'failed': function(e) { 
-                    console.log('Call failed: ', e); 
-                    setCallState(false);
-                    session = null;
-                },
-                'ended': function(e) { 
-                    console.log('Call ended: ', e); 
-                    setCallState(false);
-                    session = null;
-                },
-                'confirmed': function(e) { 
-                    console.log('Call confirmed'); 
-                    setCallState(true);
-                }
-            };
+            // 1. Get User Media (Microphone)
+            console.log('[makeCall] Requesting microphone access...');
+            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                .then(stream => {
+                    console.log('[makeCall] Microphone access granted.');
+                    
+                    // Add tracks from the stream to the connection.
+                    // This is a good practice for ensuring media flows correctly from the start.
+                    stream.getTracks().forEach(track => {
+                        console.log(`[makeCall] Adding local audio track: ${track.label}`);
+                    });
 
-            const options = {
-                'eventHandlers': eventHandlers,
-                'mediaConstraints': { 'audio': true, 'video': false }
-            };
+                    // 2. Setup Call Options with the obtained stream
+                    const eventHandlers = {
+                        'progress': function(e) { console.log('[SESSION] Event: progress (call is ringing)'); },
+                        'failed': function(e) {
+                            console.error('Call failed:', e);
+                            setCallState(false);
+                            session = null;
+                            stream.getTracks().forEach(track => track.stop()); // Stop mic on failure
+                        },
+                        'ended': function(e) {
+                            console.log('Call ended:', e);
+                            setCallState(false);
+                            session = null;
+                            stream.getTracks().forEach(track => track.stop()); // Stop mic on end
+                        },
+                        'confirmed': function(e) {
+                            console.log('[SESSION] Event: confirmed (call is active).');
+                            setCallState(true);
+                        }
+                    };
 
-            session = ua.call(target, options);
-            setupSessionEvents(session);
+                    const options = {
+                        'eventHandlers': eventHandlers,
+                        'mediaStream': stream // Pass the microphone stream to the call
+                    };
+
+                    // 3. Initiate the call
+                    console.log('[makeCall] Calling with options:', options);
+                    session = ua.call(target, options);
+                    setupSessionEvents(session);
+
+                })
+                .catch(err => {
+                    console.error("[makeCall] Failed to get local stream", err);
+                    alert("Could not start call: Failed to get microphone access. Error: " + err.message);
+                });
         }
 
         function hangupCall() {
@@ -347,30 +399,59 @@
         }
 
         function setupSessionEvents(session) {
-            session.connection.addEventListener('addstream', (e) => {
-                const remoteAudio = document.getElementById('remoteAudio');
-                remoteAudio.srcObject = e.stream;
-                remoteAudio.play();
+            console.log('[setupSessionEvents] Setting up event listeners for the new session.');
+
+            // Listen for ICE connection state changes
+            session.connection.addEventListener('iceconnectionstatechange', () => {
+                const iceState = session.connection.iceConnectionState;
+                console.log(`[ICE] Connection State Changed: ${iceState}`);
+                if (iceState === 'failed' || iceState === 'disconnected' || iceState === 'closed') {
+                     console.error(`[ICE] Connection to media server failed or was lost. State: ${iceState}`);
+                     // You might want to update the UI here as well.
+                }
+                if (iceState === 'connected' || iceState === 'completed') {
+                    console.log("[ICE] Media connection successfully established!");
+                }
             });
-            
+
             // Standard WebRTC track event (newer browsers)
             session.connection.addEventListener('track', (e) => {
+                 console.log('[TRACK] Received remote media track.');
                  const remoteAudio = document.getElementById('remoteAudio');
-                 remoteAudio.srcObject = e.streams[0];
-                 remoteAudio.play();
+                 
+                 // Prevent interruption error by checking if a stream is already assigned
+                 if (remoteAudio.srcObject !== e.streams[0]) {
+                    console.log('[TRACK] Attaching remote stream to audio element.');
+                    remoteAudio.srcObject = e.streams[0];
+                    
+                    console.log('[TRACK] Attempting to play remote audio...');
+                    remoteAudio.play()
+                        .then(() => {
+                            console.log('[TRACK] remoteAudio.play() successfully initiated.');
+                        })
+                        .catch(error => {
+                            console.error("[TRACK] remoteAudio.play() failed:", error);
+                            alert("중요: 브라우저가 자동재생을 차단했을 수 있습니다. 페이지와 상호작용(클릭 등) 후 다시 시도해보세요.");
+                        });
+                 } else {
+                    console.log('[TRACK] Remote stream already attached. Ignoring duplicate track event.');
+                 }
             });
 
             session.on('ended', () => {
+                console.log('[SESSION] Event: ended');
                 setCallState(false);
                 session = null;
             });
             
-            session.on('failed', () => {
+            session.on('failed', (e) => {
+                console.error('[SESSION] Event: failed', e);
                 setCallState(false);
                 session = null;
             });
 
              session.on('confirmed', () => {
+                console.log('[SESSION] Event: confirmed (call is active).');
                 setCallState(true);
             });
         }
