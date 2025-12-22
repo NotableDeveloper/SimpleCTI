@@ -48,7 +48,7 @@ public class OutboundCallCommand {
         OriginateAction originateAction = new OriginateAction();
         originateAction.setChannel(channel);
         originateAction.setContext(Context);
-        originateAction.setExten(targetNumber);
+        originateAction.setExten(Account);
         originateAction.setPriority(1);
         originateAction.setTimeout(30000L);
         originateAction.setCallerId(MainNumber);
