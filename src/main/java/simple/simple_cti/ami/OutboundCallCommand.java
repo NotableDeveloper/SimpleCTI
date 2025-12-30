@@ -43,13 +43,13 @@ public class OutboundCallCommand {
             throw new IOException("AMI connection is not established or connected.");
         }
 
-        String channel = Channel + targetNumber + Gateway;
+        String agentChannel = Channel + Account;
+        String customerDialString = Channel + targetNumber + Gateway;
 
         OriginateAction originateAction = new OriginateAction();
-        originateAction.setChannel(channel);
-        originateAction.setContext(Context);
-        originateAction.setExten(Account);
-        originateAction.setPriority(1);
+        originateAction.setChannel(agentChannel);
+        originateAction.setApplication("Dial");
+        originateAction.setData(customerDialString);
         originateAction.setTimeout(30000L);
         originateAction.setCallerId(MainNumber);
         originateAction.setAccount(Account);

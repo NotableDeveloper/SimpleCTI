@@ -62,10 +62,9 @@ class OutboundCallCommandTest {
         verify(managerConnection).sendAction(captor.capture());
 
         OriginateAction sentAction = captor.getValue();
-        assertEquals("SIP/01012345678@my-gateway", sentAction.getChannel());
-        assertEquals("from-internal", sentAction.getContext());
-        assertEquals(targetNumber, sentAction.getExten());
-        assertEquals(1, sentAction.getPriority());
+        assertEquals("SIP/test-account", sentAction.getChannel());
+        assertEquals("Dial", sentAction.getApplication());
+        assertEquals("SIP/01012345678@my-gateway", sentAction.getData());
         assertEquals(30000L, sentAction.getTimeout());
         assertEquals("1000", sentAction.getCallerId());
         assertEquals("test-account", sentAction.getAccount());

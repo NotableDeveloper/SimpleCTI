@@ -1,6 +1,5 @@
 package simple.simple_cti.ami;
 
-import org.asteriskjava.AsteriskVersion;
 import org.asteriskjava.manager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
