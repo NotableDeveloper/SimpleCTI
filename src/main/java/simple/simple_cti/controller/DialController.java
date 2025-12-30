@@ -22,10 +22,10 @@ public class DialController {
 
     @PostMapping("/originate")
     @ResponseBody
-    public Map<String, Object> originate(@RequestParam String targetNumber) {
+    public Map<String, Object> originate(@RequestParam String targetNumber, @RequestParam(defaultValue = "false") boolean recordingEnabled) {
         Map<String, Object> response = new HashMap<>();
         try {
-            outboundCallCommand.executeOriginate(targetNumber);
+            outboundCallCommand.executeOriginate(targetNumber, recordingEnabled);
             response.put("success", true);
         } catch (Exception e) {
             response.put("success", false);

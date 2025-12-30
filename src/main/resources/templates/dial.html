@@ -46,18 +46,24 @@
         <h2>Dial</h2>
         <input type="text" id="targetNumber" placeholder="Phone Number">
         <br>
+        <label>
+            <input type="checkbox" id="recordingEnabled"> Record Call
+        </label>
+        <br><br>
         <button onclick="dial()">Dial</button>
     </div>
 
     <script>
         function dial() {
             const targetNumber = document.getElementById('targetNumber').value;
+            const recordingEnabled = document.getElementById('recordingEnabled').checked;
+
             if (!targetNumber) {
                 console.warn("Please enter a phone number.");
                 return;
             }
 
-            fetch('/originate?targetNumber=' + encodeURIComponent(targetNumber), {
+            fetch('/originate?targetNumber=' + encodeURIComponent(targetNumber) + '&recordingEnabled=' + recordingEnabled, {
                 method: 'POST'
             })
             .then(response => response.json())

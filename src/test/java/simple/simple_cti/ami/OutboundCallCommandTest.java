@@ -52,7 +52,7 @@ class OutboundCallCommandTest {
         when(managerConnection.sendAction(any(OriginateAction.class))).thenReturn(expectedResponse);
 
         // Act
-        ManagerResponse response = outboundCallCommand.executeOriginate(targetNumber);
+        ManagerResponse response = outboundCallCommand.executeOriginate(targetNumber, false);
 
         // Assert
         assertNotNull(response);
@@ -78,7 +78,7 @@ class OutboundCallCommandTest {
 
         // Act & Assert
         IOException exception = assertThrows(IOException.class, () -> 
-            outboundCallCommand.executeOriginate("01012345678")
+            outboundCallCommand.executeOriginate("01012345678", false)
         );
         assertEquals("AMI connection is not established or connected.", exception.getMessage());
     }
@@ -91,7 +91,7 @@ class OutboundCallCommandTest {
 
         // Act & Assert
         IOException exception = assertThrows(IOException.class, () -> 
-            outboundCallCommand.executeOriginate("01012345678")
+            outboundCallCommand.executeOriginate("01012345678", false)
         );
         assertEquals("AMI connection is not established or connected.", exception.getMessage());
     }

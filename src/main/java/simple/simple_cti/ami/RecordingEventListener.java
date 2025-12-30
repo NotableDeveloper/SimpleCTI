@@ -1,21 +1,28 @@
 package simple.simple_cti.ami;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.asteriskjava.manager.ManagerEventListener;
+import org.asteriskjava.manager.action.GetVarAction;
 import org.asteriskjava.manager.action.MixMonitorAction;
 import org.asteriskjava.manager.event.BridgeEnterEvent;
 import org.asteriskjava.manager.event.ManagerEvent;
+import org.asteriskjava.manager.response.ManagerResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Component
 public class RecordingEventListener implements ManagerEventListener {
     private static final Logger logger = LoggerFactory.getLogger(RecordingEventListener.class);
     private final AmiConnectionManager amiConnectionManager;
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     @Value("${outbound.account}")
     private String agentAccount;
@@ -33,6 +40,11 @@ public class RecordingEventListener implements ManagerEventListener {
             logger.warn("AmiConnectionManager connection is null. RecordingEventListener NOT registered.");
         }
     }
+    
+    @PreDestroy
+    public void cleanup() {
+        executorService.shutdown();
+    }
 
     @Override
     public void onManagerEvent(ManagerEvent event) {
@@ -41,10 +53,28 @@ public class RecordingEventListener implements ManagerEventListener {
             String channel = bridgeEvent.getChannel();
             
             // Check if the channel belongs to our agent
-            // Typically channel names are like "PJSIP/100-0000001" where "100" is the account
             if (channel != null && agentAccount != null && channel.contains(agentAccount)) {
-                startRecording(channel);
+                // Offload blocking operations to a separate thread
+                executorService.submit(() -> {
+                    if (shouldRecord(channel)) {
+                        startRecording(channel);
+                    }
+                });
             }
+        }
+    }
+
+    private boolean shouldRecord(String channel) {
+        try {
+            GetVarAction getVarAction = new GetVarAction(channel, "G_RECORD_CALL");
+            ManagerResponse response = amiConnectionManager.getManagerConnection().sendAction(getVarAction);
+            if (response == null) return false;
+            
+            String value = response.getAttribute("Value");
+            return "true".equalsIgnoreCase(value);
+        } catch (Exception e) {
+            logger.warn("Failed to check recording variable for channel {}", channel, e);
+            return false;
         }
     }
 

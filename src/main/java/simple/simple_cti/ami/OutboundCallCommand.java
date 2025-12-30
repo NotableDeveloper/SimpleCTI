@@ -35,7 +35,7 @@ public class OutboundCallCommand {
         this.amiConnectionManager = amiConnectionManager;
     }
 
-    public ManagerResponse executeOriginate(String targetNumber) throws Exception {
+    public ManagerResponse executeOriginate(String targetNumber, boolean recordingEnabled) throws Exception {
         ManagerConnection connection = amiConnectionManager.getManagerConnection();
 
         if (connection == null || connection.getState() != ManagerConnectionState.CONNECTED) {
@@ -54,6 +54,10 @@ public class OutboundCallCommand {
         originateAction.setCallerId(MainNumber);
         originateAction.setAccount(Account);
         originateAction.setAsync(true);
+        
+        if (recordingEnabled) {
+            originateAction.setVariable("G_RECORD_CALL", "true");
+        }
 
         logger.info("Sending OriginateAction to Asterisk: {}", originateAction);
         ManagerResponse response = connection.sendAction(originateAction);
