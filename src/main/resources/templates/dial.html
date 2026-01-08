@@ -51,6 +51,14 @@
         </label>
         <br><br>
         <button onclick="dial()">Dial</button>
+
+        <hr style="width: 100%; margin: 20px 0;">
+        
+        <h3>Recordings</h3>
+        <button onclick="loadRecordings()" style="background-color: #28a745; margin-bottom: 10px;">Refresh List</button>
+        <div id="recordingList" style="text-align: left; max-height: 200px; overflow-y: auto; width: 100%;"></div>
+        <br>
+        <button onclick="downloadSelected()" style="background-color: #17a2b8;">Download Selected</button>
     </div>
 
     <script>
@@ -78,6 +86,64 @@
                 console.error('Error:', error);
             });
         }
+
+        function loadRecordings() {
+            fetch('/api/recordings/list')
+            .then(response => response.json())
+            .then(files => {
+                const listContainer = document.getElementById('recordingList');
+                listContainer.innerHTML = '';
+                if (files.length === 0) {
+                    listContainer.innerHTML = '<p>No recordings found.</p>';
+                    return;
+                }
+                
+                // Sort files (newest first roughly)
+                files.sort().reverse();
+
+                files.forEach(file => {
+                    const div = document.createElement('div');
+                    div.style.padding = '5px';
+                    div.style.borderBottom = '1px solid #eee';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'rec-checkbox';
+                    checkbox.value = file;
+                    checkbox.style.marginRight = '10px';
+                    
+                    const label = document.createElement('span');
+                    label.textContent = file;
+                    
+                    div.appendChild(checkbox);
+                    div.appendChild(label);
+                    listContainer.appendChild(div);
+                });
+            })
+            .catch(error => console.error('Error loading recordings:', error));
+        }
+
+        function downloadSelected() {
+            const checkboxes = document.querySelectorAll('.rec-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Please select at least one recording to download.');
+                return;
+            }
+
+            checkboxes.forEach(cb => {
+                const filename = cb.value;
+                // Create a hidden link to trigger download
+                const link = document.createElement('a');
+                link.href = '/api/recordings/' + encodeURIComponent(filename);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+        
+        // Initial load
+        // loadRecordings(); 
     </script>
 </body>
 </html>
