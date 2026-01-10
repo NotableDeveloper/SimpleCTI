@@ -38,9 +38,10 @@ public class AmiConnectionManager {
             this.managerConnection = factory.createManagerConnection();
             managerConnection.login();
             logger.info("AMI connection process initiated by AmiConnectionManager.");
-        } catch (IOException | AuthenticationFailedException | TimeoutException | IllegalStateException e) {
+        } catch (Exception e) {
             logger.error("AmiConnectionManager failed to connect to Asterisk. Shutting down application.", e);
             SpringApplication.exit(context, () -> 1);
+            System.exit(1);
         }
     }
 
