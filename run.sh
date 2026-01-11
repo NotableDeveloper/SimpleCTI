@@ -7,6 +7,6 @@ echo "[1/2] Building Docker image 'simple-cti'..."
 docker build -t simple-cti .
 
 echo ""
-echo "[2/2] Running container on http://localhost:8080"
+echo "[2/2] Running container in host network mode"
 
-docker run -p 8080:8080 --add-host=host.docker.internal:host-gateway -e ASTERISK_HOST=host.docker.internal simple-cti
+docker run --network host simple-cti &
