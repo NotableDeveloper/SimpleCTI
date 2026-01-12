@@ -10,9 +10,9 @@ import java.io.OutputStream;
 import java.util.Properties;
 
 @Service
-public class SftpService {
+public class RecordingService {
     
-    private static final Logger logger = LoggerFactory.getLogger(SftpService.class);
+    private static final Logger logger = LoggerFactory.getLogger(RecordingService.class);
 
     @Value("${sftp.host}")
     private String host;
