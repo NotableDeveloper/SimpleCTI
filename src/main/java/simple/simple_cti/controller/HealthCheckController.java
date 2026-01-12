@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/status")
+@RequestMapping("/api/health")
 public class HealthCheckController {
 
     private final AmiConnectionManager amiConnectionManager;
