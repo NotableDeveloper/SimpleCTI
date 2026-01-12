@@ -26,7 +26,6 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.asteriskjava:asterisk-java:3.41.0'
     implementation 'com.jcraft:jsch:0.1.55'
     implementation 'com.google.guava:guava:31.1-jre'
