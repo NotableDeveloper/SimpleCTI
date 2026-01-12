@@ -43,7 +43,7 @@ export default {
   methods: {
     async fetchStatus() {
       try {
-        const response = await fetch('/api/status');
+        const response = await fetch('/api/health/asterisk');
         if (response.ok) {
           const data = await response.json();
           this.status = data;
