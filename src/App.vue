@@ -88,7 +88,7 @@ export default {
     },
     async fetchAppHealth() {
       try {
-        const response = await fetch('/api/health');
+        const response = await fetch(`${process.env.VUE_APP_API_BASE_URL}/api/health`);
         if (response.ok) {
           const data = await response.json();
           this.appStatus = data;
@@ -102,7 +102,7 @@ export default {
     },
     async fetchAsteriskStatus() {
       try {
-        const response = await fetch('/api/health/asterisk');
+        const response = await fetch(`${process.env.VUE_APP_API_BASE_URL}/api/health/asterisk`);
         if (response.ok) {
           const data = await response.json();
           this.asteriskStatus = data;

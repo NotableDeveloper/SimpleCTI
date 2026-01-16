@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { UserAgent, Registerer, Inviter, Web } from 'sip.js';
+import { UserAgent, Registerer, Inviter } from 'sip.js';
 
 export default {
   name: 'DialerPage',
