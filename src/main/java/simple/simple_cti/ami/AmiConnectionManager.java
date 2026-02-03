@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.io.IOException;
+
 
 @Component
 public class AmiConnectionManager {
