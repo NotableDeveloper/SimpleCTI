@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { UserAgent, Registerer, Inviter } from 'sip.js';
+import { UserAgent, Registerer, Inviter, SessionState } from 'sip.js';
 
 export default {
   name: 'DialerPage',
@@ -144,12 +144,17 @@ export default {
       this.callStatus = 'InCall';
     },
     setupSessionDelegate(session) {
-      session.delegate = {
-        onCallTerminated: () => {
-          console.log("Call terminated");
+      session.stateChange.addListener((newState) => {
+        console.log("Session state:", newState);
+        if (newState === SessionState.Established) {
+          this.callStatus = 'InCall';
+        } else if (newState === SessionState.Terminated) {
           this.session = null;
           this.callStatus = 'Registered';
-        },
+        }
+      });
+
+      session.delegate = {
         onSessionDescriptionHandler: (sdh) => {
           const remoteStream = new MediaStream();
           sdh.peerConnection.getReceivers().forEach((receiver) => {
@@ -219,14 +224,26 @@ export default {
     async hangup() {
       if (!this.session) return;
 
-      if (this.session instanceof Inviter && this.callStatus === 'Ringing') {
-        await this.session.cancel();
-      } else {
-        await this.session.bye();
+      const state = this.session.state;
+
+      if (state === SessionState.Terminated || state === SessionState.Terminating) {
+        this.session = null;
+        this.callStatus = 'Registered';
+        return;
       }
-      
-      this.session = null;
-      this.callStatus = 'Registered';
+
+      try {
+        if (this.session instanceof Inviter && state === SessionState.Establishing) {
+          await this.session.cancel();
+        } else {
+          await this.session.bye();
+        }
+      } catch (e) {
+        console.warn("Hangup error:", e);
+      } finally {
+        this.session = null;
+        this.callStatus = 'Registered';
+      }
     },
     async loadRecordings() {
       try {
