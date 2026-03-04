@@ -1,0 +1,23 @@
+spring.application.name=Simple_CTI
+logging.pattern.dateformat=yyyy-MM-dd HH:mm:ss:SSS
+server.port=8090
+
+# Asterisk AMI
+asterisk.host=192.168.1.xxx
+asterisk.username=your_ami_username
+asterisk.password=your_ami_password
+logging.level.simple.simple_cti.ami.AmiService=INFO
+
+# Outbound call routing
+outbound.channel=PJSIP/
+outbound.gateway=@GATEWAY
+outbound.context=outbound_sample
+outbound.main_number=0XXXXXXXXXX
+outbound.account=XXXX
+
+# Recording & SFTP
+recording.base-path=/var/spool/asterisk/monitor/
+sftp.host=192.168.1.xxx
+sftp.port=22
+sftp.username=your_sftp_username
+sftp.password=your_sftp_password
