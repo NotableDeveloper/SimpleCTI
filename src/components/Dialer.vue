@@ -158,7 +158,7 @@ export default {
             }
           });
           this.$refs.remoteAudio.srcObject = remoteStream;
-          this.$refs.remoteAudio.play();
+          this.$refs.remoteAudio.play().catch(e => console.warn('Audio play interrupted:', e));
         }
       };
     },
@@ -176,6 +176,19 @@ export default {
 
       if (!this.userAgent || this.callStatus === 'Idle') {
         alert("SIP is not registered. Please check configuration.");
+        return;
+      }
+
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+          alert("마이크를 찾을 수 없습니다. 오디오 입력 장치를 연결하거나 브라우저 권한을 확인해주세요.");
+        } else if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+          alert("마이크 접근이 거부되었습니다. 브라우저에서 마이크 권한을 허용해주세요.");
+        } else {
+          alert("마이크 접근 중 오류가 발생했습니다: " + e.message);
+        }
         return;
       }
 
