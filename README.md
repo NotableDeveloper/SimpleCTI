@@ -60,3 +60,64 @@ outbound.account=agent_extension # 상담사 내선번호
     ```
 
 4.  웹 브라우저에서 `http://localhost:8080`에 접속하여 상태를 확인하고, `http://localhost:8080/dial`에서 전화 발신 기능을 사용할 수 있습니다.
+
+---
+
+## 테스트
+
+### 실행 방법
+
+```shell
+# 전체 테스트 실행
+./gradlew test
+
+# 특정 클래스만 실행
+./gradlew test --tests "simple.simple_cti.ami.OutboundCallCommandTest"
+```
+
+### Mock 전략 (A방식)
+
+외부 시스템 직전 경계에서만 Mock을 적용하고, 내부 코드는 실제 객체로 실행합니다.
+
+| 외부 시스템 | Mock 대상 |
+|------------|----------|
+| Asterisk 서버 (AMI) | `ManagerConnection` |
+| SFTP 서버 | `JSch`, `Session`, `ChannelSftp` |
+
+이 방식의 핵심은 **동작(결과)을 검증**하는 것입니다. 내부 구현이 바뀌어도 동작이 동일하면 테스트는 통과해야 합니다.
+
+### 테스트 범위
+
+| 클래스 | 테스트 파일 | 방식 | 테스트 수 | 주요 검증 항목 |
+|--------|------------|------|---------|--------------|
+| `AmiConnectionManager` | `ami/AmiConnectionManagerTest` | 단위 테스트 | 9 | `getConnectionState()` null 분기, `getAsteriskVersion()` null 분기, `disconnect()` 상태별 `logoff()` 호출 여부 |
+| `OutboundCallCommand` | `ami/OutboundCallCommandTest` | 단위 테스트 | 4 | 연결 상태별 발신 성공/실패, 녹음 활성화 시 `G_RECORD_CALL` 변수 전달 여부 |
+| `RecordingEventListener` | `ami/RecordingEventListenerTest` | 단위 테스트 | 7 | `BridgeEnterEvent` 필터링, `G_RECORD_CALL` 값에 따른 `MixMonitorAction` 전송 여부 (비동기 검증) |
+| `DialController` | `controller/DialControllerTest` | `@WebMvcTest` | 4 | AMI 연결 상태별 응답 (`success: true/false`), 필수 파라미터 누락 시 400 |
+| `HealthCheckController` | `controller/HealthCheckControllerTest` | `@WebMvcTest` | 3 | `/api/health` 응답 구조, `/api/health/asterisk` 연결 상태 반영 |
+| `RecordingController` | `controller/RecordingControllerTest` | `@WebMvcTest` | 4 | 파일 목록 조회, 파일 다운로드 헤더(`Content-Type`, `Content-Disposition`), 오류 시 500 |
+| `RecordingService` | `service/RecordingServiceTest` | 단위 테스트 | 7 | SFTP 경로 조합 검증, 디렉터리 항목 필터링, 리소스 해제(`disconnect`) 보장 |
+
+**총 38개 테스트, 전체 통과**
+
+### Controller 테스트 구성 (`@WebMvcTest`)
+
+Controller 슬라이스 테스트에서 내부 서비스/커맨드는 `@Import`로 실제 객체를 주입하고, 외부 시스템과의 연결 객체만 Mock 처리합니다.
+
+```
+DialControllerTest
+  └─ @Import(OutboundCallCommand.class)   ← 실제 객체
+  └─ @MockitoBean AmiConnectionManager   ← @PostConstruct 방지
+  └─ Mockito.mock(ManagerConnection)     ← 외부 시스템 경계
+
+RecordingControllerTest
+  └─ @Import(RecordingService.class)     ← 실제 객체
+  └─ MockedConstruction<JSch>            ← 외부 시스템 경계
+```
+
+### 비동기 테스트 (`RecordingEventListener`)
+
+`RecordingEventListener.onManagerEvent()`는 내부적으로 `ExecutorService`를 통해 비동기 처리됩니다.
+
+- **호출이 발생해야 하는 케이스**: `Mockito.timeout(1000)`으로 최대 1초 대기 후 검증
+- **호출이 발생하면 안 되는 케이스**: `Mockito.after(200).never()`로 충분한 시간 대기 후 미호출 검증
