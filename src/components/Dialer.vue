@@ -480,7 +480,9 @@ export default {
       } catch (e) {
         console.warn('통화 종료 오류:', e);
       } finally {
-        this.stopCallTimer(); // 타이머 정리 (이미 종료된 경우에도 안전하게 처리)
+        // 고객 채널이 남아있는 경우를 대비해 AMI HangupAction 추가 전송
+        fetch('/api/hangup', { method: 'POST' }).catch(err => console.warn('AMI hangup 요청 오류:', err));
+        this.stopCallTimer();
         this.session = null;
         this.callStatus = 'Registered';
       }
