@@ -80,10 +80,23 @@
           </div>
         </div>
 
-        <!-- 통화 중 상태 표시 바 -->
+        <!-- InCall 상태 바 -->
         <div class="incall-info" :class="{ visible: callStatus === 'InCall' || callStatus === 'Ringing' }">
-          <span class="incall-number">{{ targetNumber || '--' }}</span>
-          <span class="incall-status">{{ callStatus === 'Ringing' ? '연결 중...' : '통화 중' }}</span>
+          <div class="incall-left">
+            <span class="incall-pulse-dot"></span>
+            <span class="incall-number">{{ targetNumber || '--' }}</span>
+            <span v-if="callStatus === 'Ringing'" class="incall-connecting">연결 중...</span>
+          </div>
+          <span v-if="callStatus === 'InCall'" class="incall-status-label">통화 중</span>
+        </div>
+
+        <!-- 타이머 바: InCall 상태일 때만 표시 -->
+        <div class="incall-timer-bar" :class="{ visible: callStatus === 'InCall' }">
+          <svg class="incall-clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <polyline points="12 7 12 12 15.5 15.5"/>
+          </svg>
+          <span class="incall-timer">{{ formattedElapsed() }}</span>
         </div>
 
         <!-- 키패드 -->
@@ -226,6 +239,10 @@ export default {
       selectedRecordings: [],
       keys: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'],
 
+      // 통화 시간 타이머 상태
+      timer: null,         // setInterval 핸들러 (clearInterval 용)
+      elapsedSeconds: 0,   // 경과 초
+
       // SIP / WebRTC 상태
       userAgent: null,
       registerer: null,
@@ -240,6 +257,33 @@ export default {
     }
   },
   methods: {
+    /**
+     * 경과 초를 MM:SS 형식으로 변환합니다.
+     * @returns {string} "MM:SS" 형식의 시간 문자열
+     */
+    formattedElapsed() {
+      const m = Math.floor(this.elapsedSeconds / 60).toString().padStart(2, '0');
+      const s = (this.elapsedSeconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    },
+
+    /**
+     * 통화 타이머를 시작합니다. (SessionState.Established 시 호출)
+     */
+    startCallTimer() {
+      this.elapsedSeconds = 0;
+      this.timer = setInterval(() => { this.elapsedSeconds++; }, 1000);
+    },
+
+    /**
+     * 통화 타이머를 정지하고 초기화합니다.
+     */
+    stopCallTimer() {
+      clearInterval(this.timer);
+      this.timer = null;
+      this.elapsedSeconds = 0;
+    },
+
     /**
      * SIP UserAgent를 초기화하고 서버에 등록합니다.
      */
@@ -324,7 +368,9 @@ export default {
         console.log('세션 상태:', newState);
         if (newState === SessionState.Established) {
           this.callStatus = 'InCall';
+          this.startCallTimer(); // 통화 연결 시 타이머 시작
         } else if (newState === SessionState.Terminated) {
+          this.stopCallTimer(); // 통화 종료 시 타이머 정지
           this.session = null;
           this.callStatus = 'Registered';
         }
@@ -434,6 +480,7 @@ export default {
       } catch (e) {
         console.warn('통화 종료 오류:', e);
       } finally {
+        this.stopCallTimer(); // 타이머 정리 (이미 종료된 경우에도 안전하게 처리)
         this.session = null;
         this.callStatus = 'Registered';
       }
@@ -507,6 +554,7 @@ export default {
     this.initSip();
   },
   beforeUnmount() {
+    this.stopCallTimer(); // 메모리 누수 방지: 인터벌 정리
     if (this.registerer) {
       this.registerer.unregister();
     }
@@ -812,30 +860,103 @@ export default {
 
 .incall-info {
   display: none;
-  padding: 12px 24px;
-  background: #fdf0ff;
+  padding: 11px 24px;
+  background: linear-gradient(135deg, #faf5ff 0%, #f5edff 100%);
   border-top: 1px solid #ddd1f7;
-  border-bottom: 1px solid #ddd1f7;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .incall-info.visible {
   display: flex;
 }
 
+/* 왼쪽 그룹 */
+.incall-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* 펄스 도트 */
+.incall-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7c3aed;
+  flex-shrink: 0;
+  animation: incallPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes incallPulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+  50%       { opacity: 0.7; transform: scale(0.88); box-shadow: 0 0 0 4px rgba(124, 58, 237, 0); }
+}
+
+/* 전화번호 */
 .incall-number {
   font-size: 13px;
   font-weight: 700;
-  color: #7c3aed;
+  color: #5b21b6;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.incall-status {
-  font-size: 13px;
+/* Ringing 상태 "연결 중..." */
+.incall-connecting {
+  font-size: 12px;
+  font-weight: 500;
+  color: #b45309;
+  font-style: italic;
+}
+
+/* InCall 상태 "통화 중" 레이블 */
+.incall-status-label {
+  font-size: 12px;
   font-weight: 600;
   color: #7c3aed;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+/* 타이머 바 (incall-info 아래 별도 행) */
+.incall-timer-bar {
+  display: none;
+  padding: 10px 24px 11px;
+  background: #f3eaff;
+  border-top: 1px solid #e4d4f9;
+  border-bottom: 1.5px solid #ddd1f7;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.incall-timer-bar.visible {
+  display: flex;
+}
+
+.incall-clock-icon {
+  width: 15px;
+  height: 15px;
+  color: #7c3aed;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.incall-timer {
+  font-size: 18px;
+  font-weight: 700;
+  color: #6d28d9;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  min-width: 4ch;
+  text-align: center;
 }
 
 /* --- 키패드 --- */
