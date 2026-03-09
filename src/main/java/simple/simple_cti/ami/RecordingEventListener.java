@@ -6,6 +6,7 @@ import org.asteriskjava.manager.ManagerEventListener;
 import org.asteriskjava.manager.action.GetVarAction;
 import org.asteriskjava.manager.action.MixMonitorAction;
 import org.asteriskjava.manager.event.BridgeEnterEvent;
+import org.asteriskjava.manager.event.HangupEvent;
 import org.asteriskjava.manager.event.ManagerEvent;
 import org.asteriskjava.manager.response.ManagerResponse;
 import org.slf4j.Logger;
@@ -25,6 +26,8 @@ public class RecordingEventListener implements ManagerEventListener {
 
     @Value("${outbound.account}")
     private String agentAccount;
+
+    private volatile String activeAgentChannel = null;
 
     public RecordingEventListener(AmiConnectionManager amiConnectionManager) {
         this.amiConnectionManager = amiConnectionManager;
@@ -50,17 +53,26 @@ public class RecordingEventListener implements ManagerEventListener {
         if (event instanceof BridgeEnterEvent) {
             BridgeEnterEvent bridgeEvent = (BridgeEnterEvent) event;
             String channel = bridgeEvent.getChannel();
-            
-            // Check if the channel belongs to our agent
+
             if (channel != null && agentAccount != null && channel.contains(agentAccount)) {
-                // Offload blocking operations to a separate thread
+                activeAgentChannel = channel;
                 executorService.submit(() -> {
                     if (shouldRecord(channel)) {
                         startRecording(channel);
                     }
                 });
             }
+        } else if (event instanceof HangupEvent) {
+            HangupEvent hangupEvent = (HangupEvent) event;
+            String channel = hangupEvent.getChannel();
+            if (channel != null && channel.equals(activeAgentChannel)) {
+                activeAgentChannel = null;
+            }
         }
+    }
+
+    public String getActiveAgentChannel() {
+        return activeAgentChannel;
     }
 
     private boolean shouldRecord(String channel) {
