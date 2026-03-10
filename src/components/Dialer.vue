@@ -60,13 +60,13 @@
               maxlength="20"
               autocomplete="off"
               inputmode="numeric"
-              :disabled="callStatus === 'InCall' || callStatus === 'Ringing'"
+              :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'"
               @keyup.enter="dial"
             />
             <button
               class="backspace-btn"
               @click="backspace"
-              :disabled="callStatus === 'InCall' || callStatus === 'Ringing'"
+              :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'"
               aria-label="한 자리 지우기"
               title="한 자리 지우기"
             >
@@ -81,11 +81,11 @@
         </div>
 
         <!-- InCall 상태 바 -->
-        <div class="incall-info" :class="{ visible: callStatus === 'InCall' || callStatus === 'Ringing' }">
+        <div class="incall-info" :class="{ visible: callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing' }">
           <div class="incall-left">
             <span class="incall-pulse-dot"></span>
             <span class="incall-number">{{ targetNumber || '--' }}</span>
-            <span v-if="callStatus === 'Ringing'" class="incall-connecting">연결 중...</span>
+            <span v-if="callStatus === 'Ringing' || callStatus === 'Dialing'" class="incall-connecting">연결 중...</span>
           </div>
           <span v-if="callStatus === 'InCall'" class="incall-status-label">통화 중</span>
         </div>
@@ -103,53 +103,53 @@
         <div class="keypad-section">
           <div class="keypad-grid">
             <!-- 1행 -->
-            <button class="key-btn" @click="appendDigit('1')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="1">
+            <button class="key-btn" @click="appendDigit('1')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="1">
               <span class="key-digit">1</span>
               <span class="key-sub">&nbsp;</span>
             </button>
-            <button class="key-btn" @click="appendDigit('2')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="2">
+            <button class="key-btn" @click="appendDigit('2')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="2">
               <span class="key-digit">2</span>
               <span class="key-sub">ABC</span>
             </button>
-            <button class="key-btn" @click="appendDigit('3')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="3">
+            <button class="key-btn" @click="appendDigit('3')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="3">
               <span class="key-digit">3</span>
               <span class="key-sub">DEF</span>
             </button>
             <!-- 2행 -->
-            <button class="key-btn" @click="appendDigit('4')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="4">
+            <button class="key-btn" @click="appendDigit('4')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="4">
               <span class="key-digit">4</span>
               <span class="key-sub">GHI</span>
             </button>
-            <button class="key-btn" @click="appendDigit('5')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="5">
+            <button class="key-btn" @click="appendDigit('5')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="5">
               <span class="key-digit">5</span>
               <span class="key-sub">JKL</span>
             </button>
-            <button class="key-btn" @click="appendDigit('6')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="6">
+            <button class="key-btn" @click="appendDigit('6')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="6">
               <span class="key-digit">6</span>
               <span class="key-sub">MNO</span>
             </button>
             <!-- 3행 -->
-            <button class="key-btn" @click="appendDigit('7')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="7">
+            <button class="key-btn" @click="appendDigit('7')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="7">
               <span class="key-digit">7</span>
               <span class="key-sub">PQRS</span>
             </button>
-            <button class="key-btn" @click="appendDigit('8')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="8">
+            <button class="key-btn" @click="appendDigit('8')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="8">
               <span class="key-digit">8</span>
               <span class="key-sub">TUV</span>
             </button>
-            <button class="key-btn" @click="appendDigit('9')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="9">
+            <button class="key-btn" @click="appendDigit('9')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="9">
               <span class="key-digit">9</span>
               <span class="key-sub">WXYZ</span>
             </button>
             <!-- 4행 -->
-            <button class="key-btn key-special" @click="appendDigit('*')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="*">
+            <button class="key-btn key-special" @click="appendDigit('*')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="*">
               <span class="key-digit">*</span>
             </button>
-            <button class="key-btn" @click="appendDigit('0')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="0">
+            <button class="key-btn" @click="appendDigit('0')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="0">
               <span class="key-digit">0</span>
               <span class="key-sub">+</span>
             </button>
-            <button class="key-btn key-special" @click="appendDigit('#')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing'" aria-label="#">
+            <button class="key-btn key-special" @click="appendDigit('#')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="#">
               <span class="key-digit">#</span>
             </button>
           </div>
@@ -448,12 +448,13 @@ export default {
       };
 
       try {
+        this.callStatus = 'Dialing';
         await this.session.invite(options);
-        this.callStatus = 'Ringing';
         console.log('발신 중...');
       } catch (error) {
         console.error('발신 실패', error);
         alert('발신에 실패했습니다.');
+        this.callStatus = 'Registered';
       }
     },
 
@@ -529,6 +530,7 @@ export default {
       switch (status) {
         case 'Registered':  return 'badge-success';
         case 'Registering': return 'badge-warning';
+        case 'Dialing':     return 'badge-warning';
         case 'Ringing':     return 'badge-warning';
         case 'InCall':      return 'badge-incall';
         case 'Idle':
@@ -546,6 +548,7 @@ export default {
         case 'Idle':        return 'Idle';
         case 'Registering': return 'Registering';
         case 'Registered':  return 'Registered';
+        case 'Dialing':     return 'Dialing';
         case 'Ringing':     return 'Ringing';
         case 'InCall':      return 'In Call';
         default:            return status;
