@@ -1,23 +1,59 @@
 services:
+  asterisk:
+    image: andrius/asterisk:20
+    container_name: asterisk
+    network_mode: host
+    volumes:
+      - ./asterisk/etc/manager.conf:/etc/asterisk/manager.conf:ro
+      - ./asterisk/etc/pjsip.conf:/etc/asterisk/pjsip.conf:ro
+      - ./asterisk/etc/extensions.conf:/etc/asterisk/extensions.conf:ro
+      - ./asterisk/etc/http.conf:/etc/asterisk/http.conf:ro
+      - asterisk_recordings:/var/spool/asterisk/monitor
+    restart: unless-stopped
+
+  sipp-mock:
+    image: ctaloi/sipp
+    container_name: sipp-mock
+    network_mode: host
+    # UAS 모드: 모든 INVITE를 즉시 200 OK로 응답 (5070 포트)
+    command: -sn uas -p 5070 -i 127.0.0.1 -aa
+    restart: unless-stopped
+    depends_on:
+      - asterisk
+
   application:
     build:
-      context: ./application
+      context: ../application
       dockerfile: Dockerfile
     container_name: application
     network_mode: host
     volumes:
-      - ./application/build/libs:/app/libs
+      - ../application/build/libs:/app/libs
     environment:
       - JAVA_OPTS=-Djava.security.egd=file:/dev/./urandom
+    depends_on:
+      - asterisk
+
+  sftp-server:
+    image: atmoz/sftp
+    container_name: sftp-server
+    network_mode: host
+    # ippbx:tosemqkrtm → /home/ippbx/monitor/ 에 recordings 볼륨 마운트
+    command: ippbx:tosemqkrtm:1000::monitor
+    volumes:
+      - asterisk_recordings:/home/ippbx/monitor
+    restart: unless-stopped
+    depends_on:
+      - asterisk
 
   softphone:
     build:
-      context: ./softphone
+      context: ../softphone
       dockerfile: Dockerfile
     container_name: softphone
     network_mode: host
     volumes:
-      - ./softphone:/app
+      - ../softphone:/app
       - softphone_node_modules:/app/node_modules
     environment:
       - NODE_ENV=development
@@ -25,3 +61,4 @@ services:
 
 volumes:
   softphone_node_modules:
+  asterisk_recordings:
