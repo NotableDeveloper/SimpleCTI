@@ -21,7 +21,7 @@
     <!-- ==================== 페이지 본문 ==================== -->
     <main class="dialer-page-body">
 
-      <!-- SIP 상태 배너 -->
+      <!-- SIP 상태 배너 (풀 너비) -->
       <div class="sip-status-banner">
         <div class="sip-status-card">
           <div class="sip-status-left">
@@ -45,175 +45,388 @@
         </div>
       </div>
 
-      <!-- 다이얼러 카드 -->
-      <div class="dialer-card">
+      <!-- 2단 레이아웃: 다이얼러(왼쪽) + SIP 로그(오른쪽) -->
+      <div class="dual-layout">
 
-        <!-- 전화번호 입력 영역 -->
-        <div class="dialer-display">
-          <div class="display-label">전화번호 입력</div>
-          <div class="display-input-row">
-            <input
-              type="tel"
-              class="display-input"
-              v-model="targetNumber"
-              placeholder="번호를 입력하세요"
-              maxlength="20"
-              autocomplete="off"
-              inputmode="numeric"
-              :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'"
-              @keyup.enter="dial"
-            />
+        <!-- ===== 왼쪽: 다이얼러 카드 ===== -->
+        <div class="dialer-card">
+
+          <!-- 전화번호 입력 영역 -->
+          <div class="dialer-display">
+            <div class="display-label">전화번호 입력</div>
+            <div class="display-input-row">
+              <input
+                type="tel"
+                class="display-input"
+                v-model="targetNumber"
+                placeholder="번호를 입력하세요"
+                maxlength="20"
+                autocomplete="off"
+                inputmode="numeric"
+                :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'"
+                @keyup.enter="dial"
+              />
+              <button
+                class="backspace-btn"
+                @click="backspace"
+                :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'"
+                aria-label="한 자리 지우기"
+                title="한 자리 지우기"
+              >
+                <!-- 백스페이스 아이콘 -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+                  <line x1="18" y1="9" x2="12" y2="15"/>
+                  <line x1="12" y1="9" x2="18" y2="15"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- InCall 상태 바 -->
+          <div class="incall-info" :class="{ visible: callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing' }">
+            <div class="incall-left">
+              <span class="incall-pulse-dot"></span>
+              <span class="incall-number">{{ targetNumber || '--' }}</span>
+              <span v-if="callStatus === 'Ringing' || callStatus === 'Dialing'" class="incall-connecting">연결 중...</span>
+            </div>
+            <span v-if="callStatus === 'InCall'" class="incall-status-label">통화 중</span>
+          </div>
+
+          <!-- 타이머 바: InCall 상태일 때만 표시 -->
+          <div class="incall-timer-bar" :class="{ visible: callStatus === 'InCall' }">
+            <svg class="incall-clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <polyline points="12 7 12 12 15.5 15.5"/>
+            </svg>
+            <span class="incall-timer">{{ formattedElapsed() }}</span>
+          </div>
+
+          <!-- 키패드 -->
+          <div class="keypad-section">
+            <div class="keypad-grid">
+              <!-- 1행 -->
+              <button class="key-btn" @click="appendDigit('1')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="1">
+                <span class="key-digit">1</span>
+                <span class="key-sub">&nbsp;</span>
+              </button>
+              <button class="key-btn" @click="appendDigit('2')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="2">
+                <span class="key-digit">2</span>
+                <span class="key-sub">ABC</span>
+              </button>
+              <button class="key-btn" @click="appendDigit('3')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="3">
+                <span class="key-digit">3</span>
+                <span class="key-sub">DEF</span>
+              </button>
+              <!-- 2행 -->
+              <button class="key-btn" @click="appendDigit('4')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="4">
+                <span class="key-digit">4</span>
+                <span class="key-sub">GHI</span>
+              </button>
+              <button class="key-btn" @click="appendDigit('5')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="5">
+                <span class="key-digit">5</span>
+                <span class="key-sub">JKL</span>
+              </button>
+              <button class="key-btn" @click="appendDigit('6')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="6">
+                <span class="key-digit">6</span>
+                <span class="key-sub">MNO</span>
+              </button>
+              <!-- 3행 -->
+              <button class="key-btn" @click="appendDigit('7')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="7">
+                <span class="key-digit">7</span>
+                <span class="key-sub">PQRS</span>
+              </button>
+              <button class="key-btn" @click="appendDigit('8')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="8">
+                <span class="key-digit">8</span>
+                <span class="key-sub">TUV</span>
+              </button>
+              <button class="key-btn" @click="appendDigit('9')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="9">
+                <span class="key-digit">9</span>
+                <span class="key-sub">WXYZ</span>
+              </button>
+              <!-- 4행 -->
+              <button class="key-btn key-special" @click="appendDigit('*')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="*">
+                <span class="key-digit">*</span>
+              </button>
+              <button class="key-btn" @click="appendDigit('0')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="0">
+                <span class="key-digit">0</span>
+                <span class="key-sub">+</span>
+              </button>
+              <button class="key-btn key-special" @click="appendDigit('#')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="#">
+                <span class="key-digit">#</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 녹음 토글 옵션 -->
+          <div class="dialer-options">
+            <label class="record-toggle" :class="{ disabled: callStatus !== 'Registered' }">
+              <input
+                type="checkbox"
+                v-model="recordingEnabled"
+                :disabled="callStatus !== 'Registered'"
+              />
+              <div class="toggle-track"></div>
+              <span class="record-label" :class="{ 'record-label-active': recordingEnabled && callStatus === 'Registered' }">
+                <!-- 녹음 아이콘 -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 15.2 14.47 17 12 17s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V21c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+                </svg>
+                통화 녹음
+              </span>
+            </label>
+          </div>
+
+          <!-- 발신 / 종료 버튼 -->
+          <div class="dialer-actions">
+
+            <!-- 발신 버튼: Registered 또는 Idle 상태일 때 표시 -->
+            <div v-if="callStatus === 'Registered' || callStatus === 'Idle'" class="action-btn-wrap">
+              <button
+                class="action-btn-circle btn-call"
+                @click="dial"
+                :disabled="callStatus === 'Idle'"
+                :style="{ opacity: callStatus === 'Idle' ? '0.5' : '1', cursor: callStatus === 'Idle' ? 'not-allowed' : 'pointer' }"
+                aria-label="발신"
+              >
+                <!-- 전화 발신 아이콘 -->
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
+                </svg>
+              </button>
+              <div class="btn-label">발신</div>
+            </div>
+
+            <!-- 종료 버튼: Ringing 또는 InCall 상태일 때 표시 -->
+            <div v-else class="action-btn-wrap">
+              <button
+                class="action-btn-circle btn-hangup"
+                @click="hangup"
+                aria-label="종료"
+              >
+                <!-- 전화 종료 아이콘 (135도 회전) -->
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(135deg);">
+                  <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
+                </svg>
+              </button>
+              <div class="btn-label">종료</div>
+            </div>
+
+          </div>
+          <!-- /dialer-actions -->
+
+        </div>
+        <!-- /dialer-card -->
+
+        <!-- ===== 오른쪽: SIP 로그 패널 ===== -->
+        <div class="sip-log-panel">
+
+          <!-- 패널 헤더 -->
+          <div class="log-panel-header">
+            <div class="log-panel-header-left">
+              <!-- 터미널 아이콘 -->
+              <div class="log-panel-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="4 17 10 11 4 5"/>
+                  <line x1="12" y1="19" x2="20" y2="19"/>
+                </svg>
+              </div>
+              <div class="log-panel-title-group">
+                <span class="log-panel-title">SIP 메시지 로그</span>
+                <span class="log-panel-subtitle">실시간 SIP 시그널링 모니터</span>
+              </div>
+              <!-- 총 로그 건수 배지 -->
+              <span class="log-count-badge">{{ sipLogs.length }}</span>
+            </div>
+
+            <div class="log-panel-header-right">
+              <!-- 자동 스크롤 토글 -->
+              <label class="autoscroll-toggle" title="자동 스크롤">
+                <input type="checkbox" v-model="sipAutoScroll" />
+                <div class="autoscroll-toggle-track"></div>
+                <span class="autoscroll-label" :class="{ 'autoscroll-label-on': sipAutoScroll }">자동 스크롤</span>
+              </label>
+
+              <!-- 로그 초기화 버튼 -->
+              <button class="log-clear-btn" @click="clearSipLogs" title="로그 지우기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+                지우기
+              </button>
+            </div>
+          </div>
+
+          <!-- 필터 바 -->
+          <div class="log-filter-bar">
+            <span class="filter-label">필터</span>
+
             <button
-              class="backspace-btn"
-              @click="backspace"
-              :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'"
-              aria-label="한 자리 지우기"
-              title="한 자리 지우기"
+              class="filter-chip"
+              :class="{ active: sipLogFilter === 'all' }"
+              data-filter="all"
+              @click="sipLogFilter = 'all'"
             >
-              <!-- 백스페이스 아이콘 -->
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
-                <line x1="18" y1="9" x2="12" y2="15"/>
-                <line x1="12" y1="9" x2="18" y2="15"/>
-              </svg>
+              All
+              <span class="filter-chip-count">{{ sipLogs.length }}</span>
             </button>
-          </div>
-        </div>
 
-        <!-- InCall 상태 바 -->
-        <div class="incall-info" :class="{ visible: callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing' }">
-          <div class="incall-left">
-            <span class="incall-pulse-dot"></span>
-            <span class="incall-number">{{ targetNumber || '--' }}</span>
-            <span v-if="callStatus === 'Ringing' || callStatus === 'Dialing'" class="incall-connecting">연결 중...</span>
-          </div>
-          <span v-if="callStatus === 'InCall'" class="incall-status-label">통화 중</span>
-        </div>
-
-        <!-- 타이머 바: InCall 상태일 때만 표시 -->
-        <div class="incall-timer-bar" :class="{ visible: callStatus === 'InCall' }">
-          <svg class="incall-clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/>
-            <polyline points="12 7 12 12 15.5 15.5"/>
-          </svg>
-          <span class="incall-timer">{{ formattedElapsed() }}</span>
-        </div>
-
-        <!-- 키패드 -->
-        <div class="keypad-section">
-          <div class="keypad-grid">
-            <!-- 1행 -->
-            <button class="key-btn" @click="appendDigit('1')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="1">
-              <span class="key-digit">1</span>
-              <span class="key-sub">&nbsp;</span>
-            </button>
-            <button class="key-btn" @click="appendDigit('2')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="2">
-              <span class="key-digit">2</span>
-              <span class="key-sub">ABC</span>
-            </button>
-            <button class="key-btn" @click="appendDigit('3')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="3">
-              <span class="key-digit">3</span>
-              <span class="key-sub">DEF</span>
-            </button>
-            <!-- 2행 -->
-            <button class="key-btn" @click="appendDigit('4')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="4">
-              <span class="key-digit">4</span>
-              <span class="key-sub">GHI</span>
-            </button>
-            <button class="key-btn" @click="appendDigit('5')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="5">
-              <span class="key-digit">5</span>
-              <span class="key-sub">JKL</span>
-            </button>
-            <button class="key-btn" @click="appendDigit('6')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="6">
-              <span class="key-digit">6</span>
-              <span class="key-sub">MNO</span>
-            </button>
-            <!-- 3행 -->
-            <button class="key-btn" @click="appendDigit('7')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="7">
-              <span class="key-digit">7</span>
-              <span class="key-sub">PQRS</span>
-            </button>
-            <button class="key-btn" @click="appendDigit('8')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="8">
-              <span class="key-digit">8</span>
-              <span class="key-sub">TUV</span>
-            </button>
-            <button class="key-btn" @click="appendDigit('9')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="9">
-              <span class="key-digit">9</span>
-              <span class="key-sub">WXYZ</span>
-            </button>
-            <!-- 4행 -->
-            <button class="key-btn key-special" @click="appendDigit('*')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="*">
-              <span class="key-digit">*</span>
-            </button>
-            <button class="key-btn" @click="appendDigit('0')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="0">
-              <span class="key-digit">0</span>
-              <span class="key-sub">+</span>
-            </button>
-            <button class="key-btn key-special" @click="appendDigit('#')" :disabled="callStatus === 'InCall' || callStatus === 'Ringing' || callStatus === 'Dialing'" aria-label="#">
-              <span class="key-digit">#</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 녹음 토글 옵션 -->
-        <div class="dialer-options">
-          <label class="record-toggle" :class="{ disabled: callStatus !== 'Registered' }">
-            <input
-              type="checkbox"
-              v-model="recordingEnabled"
-              :disabled="callStatus !== 'Registered'"
-            />
-            <div class="toggle-track"></div>
-            <span class="record-label" :class="{ 'record-label-active': recordingEnabled && callStatus === 'Registered' }">
-              <!-- 녹음 아이콘 -->
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 15.2 14.47 17 12 17s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V21c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
-              </svg>
-              통화 녹음
-            </span>
-          </label>
-        </div>
-
-        <!-- 발신 / 종료 버튼 -->
-        <div class="dialer-actions">
-
-          <!-- 발신 버튼: Registered 또는 Idle 상태일 때 표시 -->
-          <div v-if="callStatus === 'Registered' || callStatus === 'Idle'" class="action-btn-wrap">
             <button
-              class="action-btn-circle btn-call"
-              @click="dial"
-              :disabled="callStatus === 'Idle'"
-              :style="{ opacity: callStatus === 'Idle' ? '0.5' : '1', cursor: callStatus === 'Idle' ? 'not-allowed' : 'pointer' }"
-              aria-label="발신"
+              class="filter-chip"
+              :class="{ active: sipLogFilter === '1xx' }"
+              data-filter="1xx"
+              @click="sipLogFilter = '1xx'"
             >
-              <!-- 전화 발신 아이콘 -->
-              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
-              </svg>
+              <span class="filter-chip-dot" style="background: #e3b341;"></span>
+              1xx
+              <span class="filter-chip-count">{{ filterCount('1xx') }}</span>
             </button>
-            <div class="btn-label">발신</div>
+
+            <button
+              class="filter-chip"
+              :class="{ active: sipLogFilter === '2xx' }"
+              data-filter="2xx"
+              @click="sipLogFilter = '2xx'"
+            >
+              <span class="filter-chip-dot" style="background: #56d364;"></span>
+              2xx
+              <span class="filter-chip-count">{{ filterCount('2xx') }}</span>
+            </button>
+
+            <button
+              class="filter-chip"
+              :class="{ active: sipLogFilter === '3xx' }"
+              data-filter="3xx"
+              @click="sipLogFilter = '3xx'"
+            >
+              <span class="filter-chip-dot" style="background: #a8daff;"></span>
+              3xx
+              <span class="filter-chip-count">{{ filterCount('3xx') }}</span>
+            </button>
+
+            <button
+              class="filter-chip"
+              :class="{ active: sipLogFilter === '4xx' }"
+              data-filter="4xx"
+              @click="sipLogFilter = '4xx'"
+            >
+              <span class="filter-chip-dot" style="background: #ff7b72;"></span>
+              4xx
+              <span class="filter-chip-count">{{ filterCount('4xx') }}</span>
+            </button>
+
+            <button
+              class="filter-chip"
+              :class="{ active: sipLogFilter === '5xx' }"
+              data-filter="5xx"
+              @click="sipLogFilter = '5xx'"
+            >
+              <span class="filter-chip-dot" style="background: #f85149;"></span>
+              5xx
+              <span class="filter-chip-count">{{ filterCount('5xx') }}</span>
+            </button>
+
+            <button
+              class="filter-chip"
+              :class="{ active: sipLogFilter === 'request' }"
+              data-filter="request"
+              @click="sipLogFilter = 'request'"
+            >
+              <span class="filter-chip-dot" style="background: #d2a8ff;"></span>
+              Request
+              <span class="filter-chip-count">{{ filterCount('request') }}</span>
+            </button>
           </div>
 
-          <!-- 종료 버튼: Ringing 또는 InCall 상태일 때 표시 -->
-          <div v-else class="action-btn-wrap">
-            <button
-              class="action-btn-circle btn-hangup"
-              @click="hangup"
-              aria-label="종료"
-            >
-              <!-- 전화 종료 아이콘 (135도 회전) -->
-              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(135deg);">
-                <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
+          <!-- 로그 터미널 영역 -->
+          <div class="log-terminal" ref="sipLogContainer">
+
+            <!-- 빈 상태 (초기) -->
+            <div v-if="sipLogs.length === 0" class="log-empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 17 10 11 4 5"/>
+                <line x1="12" y1="19" x2="20" y2="19"/>
               </svg>
-            </button>
-            <div class="btn-label">종료</div>
+              <p>SIP 메시지가 없습니다.<br>통화를 시작하면 실시간으로 로그가 표시됩니다.</p>
+            </div>
+
+            <!-- 필터 결과 없음 상태 -->
+            <div v-else-if="filteredSipLogs.length === 0" class="log-filter-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+              </svg>
+              <p>선택한 필터에 해당하는 메시지가 없습니다.</p>
+            </div>
+
+            <!-- 로그 항목 목록 -->
+            <template v-else>
+              <div
+                v-for="entry in filteredSipLogs"
+                :key="entry.id"
+                class="log-entry expandable"
+                :class="{ 'new-entry': entry.isNew }"
+                @click="toggleDetail(entry)"
+              >
+                <!-- 타임스탬프 -->
+                <span class="log-ts">{{ entry.timestamp }}</span>
+                <!-- 방향 화살표 -->
+                <span class="log-dir" :class="entry.direction">
+                  {{ entry.direction === 'send' ? '&#8593;' : '&#8595;' }}
+                </span>
+                <!-- 메시지 타입 -->
+                <span class="log-type" :class="getSipTypeClass(entry.summary)">{{ entry.summary }}</span>
+                <!-- 메시지 요약 -->
+                <span class="log-msg">{{ entry.firstLine }}</span>
+              </div>
+              <!-- 상세 펼침 영역 -->
+              <template v-for="entry in filteredSipLogs" :key="'detail-' + entry.id">
+                <div v-if="entry.expanded" class="log-detail expanded">
+                  <pre>{{ entry.raw }}</pre>
+                </div>
+              </template>
+            </template>
+
+          </div>
+
+          <!-- 패널 푸터 (통계 상태바) -->
+          <div class="log-panel-footer">
+            <div class="log-footer-left">
+              <span class="log-stat">
+                <span class="log-stat-dot send"></span>
+                <span>송신</span>
+                <span class="log-stat-num">{{ sendCount }}</span>
+              </span>
+              <span class="log-stat">
+                <span class="log-stat-dot recv"></span>
+                <span>수신</span>
+                <span class="log-stat-num">{{ recvCount }}</span>
+              </span>
+              <!-- 필터 활성 시 결과 건수 표시 -->
+              <span v-if="sipLogFilter !== 'all'" class="log-stat-filtered">
+                <span>필터 결과</span>
+                <span class="log-stat-filtered-num">{{ filteredSipLogs.length }}</span>
+                <span>건</span>
+              </span>
+            </div>
+            <div class="log-footer-right">
+              <!-- 실시간 인디케이터: SIP 등록 후 표시 -->
+              <span v-if="callStatus !== 'Idle'" class="live-indicator">
+                <span class="live-dot"></span>
+                LIVE
+              </span>
+            </div>
           </div>
 
         </div>
-        <!-- /dialer-actions -->
+        <!-- /sip-log-panel -->
 
       </div>
-      <!-- /dialer-card -->
+      <!-- /dual-layout -->
 
     </main>
     <!-- /dialer-page-body -->
@@ -247,13 +460,33 @@ export default {
       userAgent: null,
       registerer: null,
       session: null,
-      callStatus: 'Idle', // Idle, Registering, Registered, Ringing, InCall
+      callStatus: 'Idle', // Idle, Registering, Registered, Ringing, Dialing, InCall
       sipConfig: {
         server: process.env.VUE_APP_SIP_SERVER,
         uri: process.env.VUE_APP_SIP_URI,
         password: process.env.VUE_APP_SIP_PASSWORD,
         displayName: process.env.VUE_APP_SIP_DISPLAY_NAME
+      },
+
+      // SIP 로그 상태
+      sipLogs: [],         // { id, timestamp, direction, summary, firstLine, raw, expanded, isNew }
+      sipLogFilter: 'all', // 'all' | '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'request'
+      sipAutoScroll: true,
+      sipLogIdCounter: 0,
+      sendCount: 0,
+      recvCount: 0
+    }
+  },
+  computed: {
+    /**
+     * sipLogFilter에 따라 필터링된 로그 배열을 반환합니다.
+     * @returns {Array} 필터링된 sipLogs 항목 배열
+     */
+    filteredSipLogs() {
+      if (this.sipLogFilter === 'all') {
+        return this.sipLogs;
       }
+      return this.sipLogs.filter(entry => this.matchesSipFilter(entry, this.sipLogFilter));
     }
   },
   methods: {
@@ -286,10 +519,15 @@ export default {
 
     /**
      * SIP UserAgent를 초기화하고 서버에 등록합니다.
+     * logConnector 옵션으로 SIP 내부 로그를 수집하고,
+     * transportOptions.traceSip: true 로 WebSocket raw 메시지를 로거로 라우팅합니다.
      */
     async initSip() {
       const transportOptions = {
-        server: this.sipConfig.server
+        server: this.sipConfig.server,
+        // traceSip: true 설정 시 _send() 와 onWebSocketMessage() 에서
+        // raw SIP 메시지가 logger.log()로 흘러 logConnector로 전달됩니다.
+        traceSip: true
       };
 
       const uri = UserAgent.makeURI(this.sipConfig.uri);
@@ -309,6 +547,12 @@ export default {
             console.log('수신 전화...');
             this.handleIncomingCall(invitation);
           }
+        },
+        // SIP.js 내부 로그를 가로채는 커넥터
+        // level: 'log'|'debug'|'warn'|'error', category: 로거 카테고리
+        // label: 선택적 레이블, content: 로그 내용 문자열
+        logConnector: (level, category, label, content) => {
+          this.handleSipLogConnector(level, category, label, content);
         }
       });
 
@@ -325,6 +569,237 @@ export default {
         console.error('UserAgent 시작 또는 등록 실패', error);
         this.callStatus = 'Idle';
       }
+    },
+
+    /**
+     * SIP.js logConnector 콜백 핸들러입니다.
+     * traceSip: true 옵션으로 인해 WebSocket 송수신 메시지가 이 콜백으로 전달됩니다.
+     * "Sending WebSocket message:" / "Received WebSocket message:" 패턴을 감지하여
+     * raw SIP 메시지를 파싱합니다.
+     *
+     * @param {string} level - 'log' | 'debug' | 'warn' | 'error'
+     * @param {string} category - SIP.js 내부 로거 카테고리 (예: 'sip.Transport')
+     * @param {string|undefined} label - 선택적 레이블
+     * @param {string} content - 로그 내용
+     */
+    handleSipLogConnector(level, category, label, content) {
+      if (typeof content !== 'string') return;
+
+      // WebSocket 송신 메시지 감지
+      // transport.js _send(): "Sending WebSocket message:\n\n<RAW SIP>\n"
+      if (content.includes('Sending WebSocket message:')) {
+        const rawSip = this.extractRawSip(content, 'Sending WebSocket message:');
+        if (rawSip) {
+          this.addSipLog('send', rawSip);
+        }
+        return;
+      }
+
+      // WebSocket 수신 메시지 감지 (텍스트)
+      // transport.js onWebSocketMessage(): "Received WebSocket text message:\n\n<RAW SIP>\n"
+      // 또는 바이너리: "Received WebSocket binary message:\n\n<RAW SIP>\n"
+      if (content.includes('Received WebSocket') && content.includes('message:')) {
+        const rawSip = this.extractRawSip(content, 'message:');
+        if (rawSip) {
+          this.addSipLog('recv', rawSip);
+        }
+        return;
+      }
+    },
+
+    /**
+     * 로그 내용 문자열에서 raw SIP 메시지 부분만 추출합니다.
+     * "Sending WebSocket message:\n\n<SIP>\n" 형태에서 <SIP> 부분을 추출합니다.
+     *
+     * @param {string} content - 전체 로그 내용
+     * @param {string} marker - 분리 기준 마커 문자열
+     * @returns {string|null} 추출된 raw SIP 메시지 또는 null
+     */
+    extractRawSip(content, marker) {
+      const idx = content.indexOf(marker);
+      if (idx === -1) return null;
+      const after = content.slice(idx + marker.length).replace(/^\n+/, '').replace(/\n+$/, '').trim();
+      // CRLF Keep Alive (\r\n) 는 SIP 메시지가 아니므로 제외
+      if (!after || /^(\r\n|\n)+$/.test(after)) return null;
+      // SIP 메시지 형식: 첫 줄이 "SIP/2.0" 또는 메서드명으로 시작해야 함
+      const firstLine = after.split(/\r?\n/)[0].trim();
+      if (!firstLine) return null;
+      if (!firstLine.startsWith('SIP/') && !/^[A-Z]+\s+sip/.test(firstLine) && !/^[A-Z]+\s+/.test(firstLine)) {
+        return null;
+      }
+      return after;
+    },
+
+    /**
+     * 파싱된 SIP 메시지를 sipLogs에 추가합니다.
+     * 자동 스크롤이 활성화된 경우 로그 컨테이너를 맨 아래로 스크롤합니다.
+     *
+     * @param {string} direction - 'send' | 'recv'
+     * @param {string} rawSip - raw SIP 메시지 문자열
+     */
+    addSipLog(direction, rawSip) {
+      const parsed = this.parseSipMessage(rawSip);
+      if (!parsed) return;
+
+      const now = new Date();
+      const ts = now.toTimeString().slice(0, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+
+      const entry = {
+        id: ++this.sipLogIdCounter,
+        timestamp: ts,
+        direction: direction,
+        summary: parsed.summary,
+        firstLine: parsed.firstLine,
+        raw: rawSip,
+        expanded: false,
+        isNew: true
+      };
+
+      this.sipLogs.push(entry);
+
+      if (direction === 'send') {
+        this.sendCount++;
+      } else {
+        this.recvCount++;
+      }
+
+      // 새 항목 강조 애니메이션: 0.8초 후 isNew 플래그 해제
+      setTimeout(() => {
+        entry.isNew = false;
+      }, 800);
+
+      // 자동 스크롤
+      this.$nextTick(() => {
+        const el = this.$refs.sipLogContainer;
+        if (el && this.sipAutoScroll) {
+          el.scrollTop = el.scrollHeight;
+        }
+      });
+    },
+
+    /**
+     * raw SIP 메시지 문자열을 파싱하여 summary와 firstLine을 반환합니다.
+     *
+     * - 응답: "SIP/2.0 200 OK" -> summary: "200 OK", firstLine: 전체 첫 줄
+     * - 요청: "INVITE sip:..." -> summary: "INVITE", firstLine: 전체 첫 줄
+     *
+     * @param {string} rawSip - raw SIP 메시지
+     * @returns {{ summary: string, firstLine: string } | null}
+     */
+    parseSipMessage(rawSip) {
+      const lines = rawSip.split(/\r?\n/);
+      const firstLine = lines[0].trim();
+      if (!firstLine) return null;
+
+      let summary;
+
+      if (firstLine.startsWith('SIP/2.0')) {
+        // 응답 메시지: "SIP/2.0 200 OK"
+        const match = firstLine.match(/^SIP\/2\.0\s+(\d{3})\s*(.*)/);
+        if (match) {
+          summary = match[2] ? `${match[1]} ${match[2]}` : match[1];
+        } else {
+          summary = firstLine;
+        }
+      } else {
+        // 요청 메시지: "INVITE sip:..."
+        const match = firstLine.match(/^([A-Z]+)\s+/);
+        summary = match ? match[1] : firstLine.split(' ')[0];
+      }
+
+      return { summary, firstLine };
+    },
+
+    /**
+     * 로그 항목의 상세 영역 펼침/닫힘을 토글합니다.
+     * @param {Object} entry - sipLogs 항목
+     */
+    toggleDetail(entry) {
+      entry.expanded = !entry.expanded;
+    },
+
+    /**
+     * 모든 SIP 로그를 초기화합니다.
+     */
+    clearSipLogs() {
+      this.sipLogs = [];
+      this.sendCount = 0;
+      this.recvCount = 0;
+      this.sipLogIdCounter = 0;
+    },
+
+    /**
+     * 특정 필터에 해당하는 로그 건수를 반환합니다. (필터 칩 카운트 배지용)
+     * @param {string} filter - '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | 'request'
+     * @returns {number}
+     */
+    filterCount(filter) {
+      return this.sipLogs.filter(entry => this.matchesSipFilter(entry, filter)).length;
+    },
+
+    /**
+     * 로그 항목이 주어진 필터와 일치하는지 판단합니다.
+     *
+     * @param {Object} entry - sipLogs 항목
+     * @param {string} filter - 필터 키
+     * @returns {boolean}
+     */
+    matchesSipFilter(entry, filter) {
+      if (filter === 'all') return true;
+      if (filter === 'request') {
+        // 숫자로 시작하지 않는 항목 = 요청 메시지
+        return !/^\d/.test(entry.summary);
+      }
+      // 응답 코드 계열 필터 (1xx / 2xx / 3xx / 4xx / 5xx)
+      const responseClass = this.getSipResponseClass(entry.summary);
+      return responseClass === filter;
+    },
+
+    /**
+     * summary 문자열에서 응답 코드 계열을 반환합니다.
+     * @param {string} summary - "200 OK", "401 Unauthorized" 등
+     * @returns {string|null} '1xx' | '2xx' | '3xx' | '4xx' | '5xx' | null
+     */
+    getSipResponseClass(summary) {
+      if (!summary || !/^\d/.test(summary)) return null;
+      const code = parseInt(summary, 10);
+      if (code >= 100 && code < 200) return '1xx';
+      if (code >= 200 && code < 300) return '2xx';
+      if (code >= 300 && code < 400) return '3xx';
+      if (code >= 400 && code < 500) return '4xx';
+      if (code >= 500 && code < 600) return '5xx';
+      return null;
+    },
+
+    /**
+     * SIP 메시지 summary에 따라 로그 타입 CSS 클래스를 반환합니다.
+     * @param {string} summary - "INVITE", "200 OK", "401 Unauthorized" 등
+     * @returns {string} CSS 클래스명
+     */
+    getSipTypeClass(summary) {
+      if (!summary) return '';
+      const methodMap = {
+        'INVITE':   'type-invite',
+        'REGISTER': 'type-register',
+        'ACK':      'type-ack',
+        'BYE':      'type-bye',
+        'CANCEL':   'type-cancel',
+        'OPTIONS':  'type-options',
+        'PRACK':    'type-options',
+        'UPDATE':   'type-options',
+        'SUBSCRIBE':'type-options',
+        'NOTIFY':   'type-options',
+        'REFER':    'type-options',
+        'MESSAGE':  'type-options',
+        'INFO':     'type-options',
+        'PUBLISH':  'type-options'
+      };
+      // 요청 메서드 직접 매핑
+      if (methodMap[summary]) return methodMap[summary];
+      // 응답 코드 계열 매핑 (예: "200 OK")
+      const cls = this.getSipResponseClass(summary);
+      if (cls) return 'type-' + cls;
+      return '';
     },
 
     /**
@@ -576,6 +1051,13 @@ export default {
  * App.vue의 :root CSS 변수를 그대로 참조합니다. 중복 선언하지 않습니다.
  */
 
+/* ==================== SIP 로그 패널 전용 CSS 변수 ==================== */
+/*
+ * <style scoped>에서 :root 변수는 App.vue에 있으나, 로그 패널 전용 변수는
+ * 여기에 별도 선언합니다. scoped 특성상 :root에 직접 추가 불가하므로
+ * 클래스 선택자로 스코프를 제한합니다.
+ */
+
 /* ==================== 페이지 래퍼 ==================== */
 
 /*
@@ -662,14 +1144,12 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
 /* ==================== SIP 상태 배너 ==================== */
 
 .sip-status-banner {
   width: 100%;
-  max-width: 480px;
   margin-bottom: 20px;
 }
 
@@ -758,11 +1238,20 @@ export default {
 
 /* pulse 애니메이션은 App.vue 전역에 정의되어 있으므로 여기서 중복 선언하지 않음 */
 
+/* ==================== 2단 레이아웃 ==================== */
+
+.dual-layout {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 24px;
+  align-items: start;
+  flex: 1;
+}
+
 /* ==================== 다이얼러 카드 ==================== */
 
 .dialer-card {
   width: 100%;
-  max-width: 400px;
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: 16px;
@@ -1183,23 +1672,643 @@ export default {
   letter-spacing: 0.3px;
 }
 
+/* ==================== SIP 로그 패널 ==================== */
+
+.sip-log-panel {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+  max-height: calc(100vh - 180px);
+}
+
+/* --- 패널 헤더 --- */
+
+.log-panel-header {
+  padding: 14px 18px;
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.log-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.log-panel-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #0d1117;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.log-panel-icon svg {
+  width: 15px;
+  height: 15px;
+  color: #58a6ff;
+}
+
+.log-panel-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.log-panel-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.log-panel-subtitle {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.log-panel-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 로그 카운트 배지 */
+.log-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: var(--color-text-secondary);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* 자동 스크롤 토글 */
+.autoscroll-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--color-border);
+  background: #f9fafb;
+  transition: all 0.15s;
+}
+
+.autoscroll-toggle:hover {
+  border-color: var(--color-primary);
+  background: #f0f5ff;
+}
+
+.autoscroll-toggle input[type="checkbox"] {
+  display: none;
+}
+
+.autoscroll-toggle-track {
+  width: 28px;
+  height: 16px;
+  border-radius: 8px;
+  background: #d1d5db;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.autoscroll-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.autoscroll-toggle input:checked + .autoscroll-toggle-track {
+  background: var(--color-primary);
+}
+
+.autoscroll-toggle input:checked + .autoscroll-toggle-track::after {
+  transform: translateX(12px);
+}
+
+.autoscroll-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.autoscroll-label-on {
+  color: var(--color-primary);
+}
+
+/* 로그 초기화 버튼 */
+.log-clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 7px;
+  border: 1px solid var(--color-border);
+  background: #f9fafb;
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.log-clear-btn:hover {
+  border-color: var(--color-error-border);
+  color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.log-clear-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* --- 필터 바 --- */
+
+.log-filter-bar {
+  padding: 10px 18px;
+  background: #fafbfc;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.filter-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  border-color: #b3c4fd;
+  background: #f0f5ff;
+}
+
+.filter-chip.active {
+  border-color: transparent;
+}
+
+.filter-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.filter-chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* 필터 칩 활성 색상 */
+.filter-chip[data-filter="all"].active {
+  background: #374151;
+  border-color: #374151;
+  color: #ffffff;
+}
+.filter-chip[data-filter="all"].active .filter-chip-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.filter-chip[data-filter="1xx"].active {
+  background: rgba(227, 179, 65, 0.15);
+  border-color: rgba(227, 179, 65, 0.5);
+  color: #c98a00;
+}
+.filter-chip[data-filter="1xx"].active .filter-chip-count {
+  background: rgba(227, 179, 65, 0.25);
+  color: #c98a00;
+}
+
+.filter-chip[data-filter="2xx"].active {
+  background: rgba(86, 211, 100, 0.15);
+  border-color: rgba(86, 211, 100, 0.5);
+  color: #1a7f37;
+}
+.filter-chip[data-filter="2xx"].active .filter-chip-count {
+  background: rgba(86, 211, 100, 0.25);
+  color: #1a7f37;
+}
+
+.filter-chip[data-filter="3xx"].active {
+  background: rgba(168, 218, 255, 0.2);
+  border-color: rgba(168, 218, 255, 0.6);
+  color: #2471a3;
+}
+.filter-chip[data-filter="3xx"].active .filter-chip-count {
+  background: rgba(168, 218, 255, 0.3);
+  color: #2471a3;
+}
+
+.filter-chip[data-filter="4xx"].active {
+  background: rgba(255, 123, 114, 0.15);
+  border-color: rgba(255, 123, 114, 0.5);
+  color: #b91c1c;
+}
+.filter-chip[data-filter="4xx"].active .filter-chip-count {
+  background: rgba(255, 123, 114, 0.25);
+  color: #b91c1c;
+}
+
+.filter-chip[data-filter="5xx"].active {
+  background: rgba(248, 81, 73, 0.15);
+  border-color: rgba(248, 81, 73, 0.5);
+  color: #991b1b;
+}
+.filter-chip[data-filter="5xx"].active .filter-chip-count {
+  background: rgba(248, 81, 73, 0.25);
+  color: #991b1b;
+}
+
+.filter-chip[data-filter="request"].active {
+  background: rgba(210, 168, 255, 0.15);
+  border-color: rgba(210, 168, 255, 0.5);
+  color: #6d28d9;
+}
+.filter-chip[data-filter="request"].active .filter-chip-count {
+  background: rgba(210, 168, 255, 0.25);
+  color: #6d28d9;
+}
+
+/* --- 로그 터미널 영역 --- */
+
+.log-terminal {
+  flex: 1;
+  overflow-y: auto;
+  background: #0d1117;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px 0;
+  min-height: 0;
+}
+
+/* 스크롤바 스타일 */
+.log-terminal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.log-terminal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.log-terminal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.log-terminal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 빈 상태 */
+.log-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  min-height: 200px;
+  color: #586069;
+  padding: 40px 20px;
+}
+
+.log-empty-state svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.3;
+}
+
+.log-empty-state p {
+  font-size: 12px;
+  opacity: 0.5;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* 필터 결과 없음 */
+.log-filter-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 20px;
+  color: #586069;
+}
+
+.log-filter-empty svg {
+  width: 24px;
+  height: 24px;
+  opacity: 0.25;
+}
+
+.log-filter-empty p {
+  font-size: 11.5px;
+  opacity: 0.5;
+  text-align: center;
+}
+
+/* --- 로그 항목 --- */
+
+.log-entry {
+  display: grid;
+  grid-template-columns: 78px 20px 80px 1fr;
+  gap: 0;
+  align-items: baseline;
+  padding: 3px 14px;
+  border-bottom: 1px solid transparent;
+  transition: background 0.1s;
+  cursor: default;
+}
+
+.log-entry:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.log-entry.expandable {
+  cursor: pointer;
+}
+
+.log-entry.expandable:hover .log-msg {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 새 항목 강조 애니메이션 */
+@keyframes logEntryFlash {
+  0%   { background: rgba(88, 166, 255, 0.1); }
+  100% { background: transparent; }
+}
+
+.log-entry.new-entry {
+  animation: logEntryFlash 0.8s ease-out forwards;
+}
+
+/* 타임스탬프 */
+.log-ts {
+  font-size: 10.5px;
+  color: #6e7681;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  padding-right: 8px;
+  user-select: none;
+}
+
+/* 방향 화살표 */
+.log-dir {
+  font-size: 11px;
+  font-weight: 700;
+  padding-right: 6px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+}
+
+.log-dir.send {
+  color: #58a6ff;
+}
+
+.log-dir.recv {
+  color: #56d364;
+}
+
+/* 메시지 타입 배지 */
+.log-type {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  padding-right: 10px;
+  letter-spacing: 0.3px;
+}
+
+.type-invite   { color: #79c0ff; }
+.type-register { color: #56d364; }
+.type-ack      { color: #a8daff; }
+.type-bye      { color: #ff7b72; }
+.type-cancel   { color: #ffa657; }
+.type-options  { color: #d2a8ff; }
+.type-1xx      { color: #e3b341; }
+.type-2xx      { color: #56d364; }
+.type-3xx      { color: #a8daff; }
+.type-4xx      { color: #ff7b72; }
+.type-5xx      { color: #f85149; }
+
+/* 메시지 본문 요약 */
+.log-msg {
+  color: #c9d1d9;
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 상세 펼침 영역 */
+.log-detail {
+  display: none;
+  padding: 4px 14px 8px 112px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.log-detail.expanded {
+  display: block;
+}
+
+.log-detail pre {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 10.5px;
+  color: #8b949e;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+/* --- 패널 푸터 --- */
+
+.log-panel-footer {
+  padding: 7px 18px;
+  background: #0d1117;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.log-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.log-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: #586069;
+}
+
+.log-stat-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.log-stat-dot.send { background: #58a6ff; }
+.log-stat-dot.recv { background: #56d364; }
+
+.log-stat-num {
+  color: #c9d1d9;
+  font-weight: 600;
+}
+
+/* 필터 결과 건수 */
+.log-stat-filtered {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: #586069;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.log-stat-filtered-num {
+  color: #e3b341;
+  font-weight: 600;
+}
+
+.log-footer-right {
+  font-size: 10.5px;
+  color: #586069;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 실시간 인디케이터 */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #56d364;
+}
+
+.live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #56d364;
+  animation: livePulse 1.2s ease-in-out infinite;
+}
+
 /* ==================== 반응형 ==================== */
 
-@media (max-width: 480px) {
+/* 1024px 이하: 2단 레이아웃 -> 1단 세로 배치 */
+@media (max-width: 1024px) {
+  .dual-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sip-log-panel {
+    max-height: 480px;
+  }
+
   .dialer-card {
-    max-width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
   }
+}
 
-  .sip-status-banner {
-    max-width: 100%;
-  }
-
+@media (max-width: 480px) {
   .dialer-page-body {
     padding: 20px 16px;
   }
 
   .topbar {
     padding: 0 16px;
+  }
+
+  .dialer-card {
+    max-width: 100%;
   }
 }
 </style>
