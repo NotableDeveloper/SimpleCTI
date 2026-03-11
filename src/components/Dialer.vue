@@ -378,8 +378,6 @@
                 <span class="log-dir" :class="entry.direction">
                   {{ entry.direction === 'send' ? '&#8593;' : '&#8595;' }}
                 </span>
-                <!-- 메시지 타입 -->
-                <span class="log-type" :class="getSipTypeClass(entry.summary)">{{ entry.summary }}</span>
                 <!-- 메시지 요약 -->
                 <span class="log-msg">{{ entry.firstLine }}</span>
               </div>
@@ -2080,8 +2078,8 @@ export default {
 
 .log-entry {
   display: grid;
-  grid-template-columns: 78px 20px 80px 1fr;
-  gap: 0;
+  grid-template-columns: 78px 18px 1fr;
+  gap: 0 8px;
   align-items: baseline;
   padding: 3px 14px;
   border-bottom: 1px solid transparent;
@@ -2119,7 +2117,6 @@ export default {
   color: #6e7681;
   white-space: nowrap;
   letter-spacing: 0.2px;
-  padding-right: 8px;
   user-select: none;
 }
 
@@ -2127,7 +2124,6 @@ export default {
 .log-dir {
   font-size: 11px;
   font-weight: 700;
-  padding-right: 6px;
   user-select: none;
   display: flex;
   align-items: center;
@@ -2141,27 +2137,6 @@ export default {
   color: #56d364;
 }
 
-/* 메시지 타입 배지 */
-.log-type {
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-  padding-right: 10px;
-  letter-spacing: 0.3px;
-}
-
-.type-invite   { color: #79c0ff; }
-.type-register { color: #56d364; }
-.type-ack      { color: #a8daff; }
-.type-bye      { color: #ff7b72; }
-.type-cancel   { color: #ffa657; }
-.type-options  { color: #d2a8ff; }
-.type-1xx      { color: #e3b341; }
-.type-2xx      { color: #56d364; }
-.type-3xx      { color: #a8daff; }
-.type-4xx      { color: #ff7b72; }
-.type-5xx      { color: #f85149; }
-
 /* 메시지 본문 요약 */
 .log-msg {
   color: #c9d1d9;
@@ -2169,12 +2144,13 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 /* 상세 펼침 영역 */
 .log-detail {
   display: none;
-  padding: 4px 14px 8px 112px;
+  padding: 4px 14px 8px 36px;
   background: rgba(255, 255, 255, 0.02);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
