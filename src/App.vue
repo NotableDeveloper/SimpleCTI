@@ -434,48 +434,9 @@ export default {
 
 <style>
 /*
- * 전역 스타일: body, :root, #main-app 등 레이아웃 기반 스타일
- * 디자인 시스템 CSS 변수는 :root에서 관리합니다.
+ * App.vue 레이아웃 스타일: 사이드바, 메인 콘텐츠, 대시보드 UI 전용
+ * 전역 CSS 변수 및 reset 스타일은 assets/styles/variables.css에서 관리합니다.
  */
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  --color-success: #28a745;
-  --color-success-bg: #e9f7ec;
-  --color-success-border: #b7dfbe;
-  --color-error: #dc3545;
-  --color-error-bg: #fdf0f1;
-  --color-error-border: #f3b0b5;
-  --color-warning: #ffc107;
-  --color-warning-bg: #fff9e6;
-  --color-warning-border: #ffe083;
-  --color-bg: #f0f2f5;
-  --color-card: #ffffff;
-  --color-sidebar: #1a1f2e;
-  --color-sidebar-hover: #252c3f;
-  --color-sidebar-active: #2d3650;
-  --color-sidebar-text: #8b93a8;
-  --color-sidebar-text-active: #ffffff;
-  --color-primary: #4a7cf7;
-  --color-primary-hover: #3a6ce7;
-  --color-text-primary: #1a1f2e;
-  --color-text-secondary: #6b7280;
-  --color-border: #e5e7eb;
-  --sidebar-width: 220px;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-  background: var(--color-bg);
-  min-height: 100vh;
-  display: flex;
-  color: var(--color-text-primary);
-}
 
 #main-app {
   display: flex;

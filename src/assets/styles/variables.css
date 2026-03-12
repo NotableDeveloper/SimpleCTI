@@ -1,0 +1,44 @@
+/* ==================== 전역 Reset ==================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==================== 디자인 시스템 CSS 변수 ==================== */
+
+:root {
+  --color-success: #28a745;
+  --color-success-bg: #e9f7ec;
+  --color-success-border: #b7dfbe;
+  --color-error: #dc3545;
+  --color-error-bg: #fdf0f1;
+  --color-error-border: #f3b0b5;
+  --color-warning: #ffc107;
+  --color-warning-bg: #fff9e6;
+  --color-warning-border: #ffe083;
+  --color-bg: #f0f2f5;
+  --color-card: #ffffff;
+  --color-sidebar: #1a1f2e;
+  --color-sidebar-hover: #252c3f;
+  --color-sidebar-active: #2d3650;
+  --color-sidebar-text: #8b93a8;
+  --color-sidebar-text-active: #ffffff;
+  --color-primary: #4a7cf7;
+  --color-primary-hover: #3a6ce7;
+  --color-text-primary: #1a1f2e;
+  --color-text-secondary: #6b7280;
+  --color-border: #e5e7eb;
+  --sidebar-width: 220px;
+}
+
+/* ==================== 전역 Body 스타일 ==================== */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  background: var(--color-bg);
+  min-height: 100vh;
+  display: flex;
+  color: var(--color-text-primary);
+}
