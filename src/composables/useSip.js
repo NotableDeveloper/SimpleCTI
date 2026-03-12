@@ -323,6 +323,7 @@ export function useSip(remoteAudioRef, logConnector) {
     callStatus,
     elapsedSeconds,
     isInProgress,
+    sipConfig,    // 템플릿에서 sipConfig.uri 참조 시 필요
     initSip,
     destroySip,
     dial,

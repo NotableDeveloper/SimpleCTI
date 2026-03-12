@@ -2,12 +2,8 @@
   <div class="recordings-page">
 
     <!-- ==================== 상단 바 ==================== -->
-    <header class="topbar">
-      <div class="topbar-title">
-        <span class="topbar-heading">녹음 파일 관리</span>
-        <span class="topbar-breadcrumb">Simple CTI &rsaquo; 녹음 파일</span>
-      </div>
-      <div class="topbar-actions">
+    <AppTopbar title="녹음 파일 관리" breadcrumb="녹음 파일">
+      <template #actions>
         <!-- 새로고침 버튼: loadRecordings 호출, 클릭 시 아이콘 회전 애니메이션 -->
         <button
           class="refresh-btn"
@@ -28,8 +24,8 @@
           </svg>
           새로고침
         </button>
-      </div>
-    </header>
+      </template>
+    </AppTopbar>
 
     <!-- ==================== 페이지 본문 ==================== -->
     <main class="recordings-page-body">
@@ -231,157 +227,39 @@
 </template>
 
 <script>
+import { useRecordings } from '@/composables/useRecordings';
+import AppTopbar from '@/components/common/AppTopbar.vue';
+
 export default {
   name: 'RecordingsPage',
   emits: ['back'],
-  data() {
+  components: { AppTopbar },
+  setup() {
+    const {
+      recordings,
+      selectedRecordings,
+      isRefreshing,
+      lastUpdated,
+      isAllSelected,
+      isIndeterminate,
+      parsedRecordings,
+      loadRecordings,
+      downloadFile,
+      downloadSelected
+    } = useRecordings();
+
     return {
-      /** @type {string[]} 서버에서 가져온 파일명 배열 (내림차순 정렬) */
-      recordings: [],
-      /** @type {string[]} 체크박스로 선택된 파일명 배열 */
-      selectedRecordings: [],
-      /** @type {boolean} 새로고침 버튼 스피닝 애니메이션 진행 여부 */
-      isRefreshing: false,
-      /** @type {string} 마지막 목록 조회 시간 (HH:MM:SS) */
-      lastUpdated: ''
-    }
-  },
-  computed: {
-    /**
-     * 전체 선택 체크박스의 checked 상태를 get/set으로 제어합니다.
-     * get: 모든 파일이 선택되었을 때 true
-     * set: true이면 전체 선택, false이면 전체 해제
-     */
-    isAllSelected: {
-      get() {
-        return this.recordings.length > 0 && this.selectedRecordings.length === this.recordings.length;
-      },
-      set(value) {
-        this.selectedRecordings = value ? [...this.recordings] : [];
-      }
-    },
-
-    /**
-     * 일부만 선택된 상태(indeterminate)를 반환합니다.
-     * 전체 선택도 아니고 전체 해제도 아닐 때 true입니다.
-     * @returns {boolean}
-     */
-    isIndeterminate() {
-      return this.selectedRecordings.length > 0 && this.selectedRecordings.length < this.recordings.length;
-    },
-
-    /**
-     * recordings 배열을 파싱하여 { filename, datetime } 객체 배열로 변환합니다.
-     * @returns {{ filename: string, datetime: { date: string, time: string } }[]}
-     */
-    parsedRecordings() {
-      return this.recordings.map(filename => ({
-        filename,
-        datetime: this.parseFileDatetime(filename)
-      }));
-    }
-  },
-  methods: {
-    /**
-     * 서버에서 녹음 파일 목록을 가져옵니다.
-     * GET /api/recordings/list 호출 후 내림차순 정렬하여 recordings에 저장합니다.
-     * 새로고침 버튼의 스피닝 애니메이션은 isRefreshing 플래그로 제어합니다.
-     */
-    async loadRecordings() {
-      // 이미 로딩 중이면 중복 호출 방지
-      if (this.isRefreshing) return;
-
-      this.isRefreshing = true;
-
-      try {
-        const response = await fetch('/api/recordings/list');
-        if (!response.ok) {
-          throw new Error(`서버 응답 오류: ${response.status}`);
-        }
-        const files = await response.json();
-        // 내림차순 정렬: 최신 파일이 상단에 표시
-        this.recordings = files.sort().reverse();
-        // 선택 상태 초기화: 목록 갱신 시 기존 선택이 유효하지 않을 수 있음
-        this.selectedRecordings = [];
-        // 마지막 조회 시간 갱신
-        this.lastUpdated = this.getCurrentTimeString();
-      } catch (error) {
-        console.error('녹음 파일 목록 로드 오류:', error);
-      } finally {
-        // 애니메이션이 눈에 보이도록 최소 700ms 유지
-        setTimeout(() => {
-          this.isRefreshing = false;
-        }, 700);
-      }
-    },
-
-    /**
-     * 선택된 녹음 파일들을 각각 개별 다운로드합니다.
-     * Dialer.vue의 downloadSelected 로직과 동일한 방식으로 동작합니다.
-     */
-    downloadSelected() {
-      if (this.selectedRecordings.length === 0) return;
-
-      this.selectedRecordings.forEach(filename => {
-        this.downloadFile(filename);
-      });
-    },
-
-    /**
-     * 단일 파일을 다운로드합니다.
-     * 동적으로 <a> 요소를 생성하여 클릭 후 즉시 제거합니다.
-     * @param {string} filename - 다운로드할 파일명
-     */
-    downloadFile(filename) {
-      const link = document.createElement('a');
-      link.href = '/api/recordings/' + encodeURIComponent(filename);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    },
-
-    /**
-     * 파일명에서 날짜와 시간을 파싱합니다.
-     * 지원 형식: YYYYMMDD-HHmmss.wav (예: 20240315-143022.wav → 2024-03-15 / 14:30:22)
-     * 형식이 맞지 않으면 date와 time 모두 파일명을 그대로 반환합니다.
-     * @param {string} filename - 파싱할 파일명
-     * @returns {{ date: string, time: string }}
-     */
-    parseFileDatetime(filename) {
-      // 확장자 제거 후 날짜-시간 분리
-      const base = filename.replace(/\.wav$/i, '');
-      const parts = base.split('-');
-
-      // YYYYMMDD-HHmmss 형식 검증: 하이픈으로 분리된 두 파트가 각각 8자리, 6자리여야 함
-      if (parts.length < 2) {
-        return { date: filename, time: '' };
-      }
-
-      const datePart = parts[0];
-      const timePart = parts[1];
-
-      if (datePart.length !== 8 || timePart.length !== 6 || !/^\d+$/.test(datePart) || !/^\d+$/.test(timePart)) {
-        return { date: filename, time: '' };
-      }
-
-      const date = `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}`;
-      const time = `${timePart.slice(0, 2)}:${timePart.slice(2, 4)}:${timePart.slice(4, 6)}`;
-
-      return { date, time };
-    },
-
-    /**
-     * 현재 시각을 HH:MM:SS 형식의 문자열로 반환합니다.
-     * @returns {string}
-     */
-    getCurrentTimeString() {
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      const ss = String(now.getSeconds()).padStart(2, '0');
-      return `${hh}:${mm}:${ss}`;
-    }
+      recordings,
+      selectedRecordings,
+      isRefreshing,
+      lastUpdated,
+      isAllSelected,
+      isIndeterminate,
+      parsedRecordings,
+      loadRecordings,
+      downloadFile,
+      downloadSelected
+    };
   },
   mounted() {
     // 컴포넌트 마운트 시 녹음 파일 목록 자동 로드
@@ -408,44 +286,6 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 60px); /* 60px = App.vue topbar 높이 */
-}
-
-/* ==================== topbar ==================== */
-
-.topbar {
-  background: var(--color-card);
-  border-bottom: 1px solid var(--color-border);
-  padding: 0 32px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 60px; /* App.vue topbar 아래에 위치 */
-  z-index: 40;
-}
-
-.topbar-title {
-  display: flex;
-  flex-direction: column;
-}
-
-.topbar-heading {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  line-height: 1.3;
-}
-
-.topbar-breadcrumb {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 /* ==================== 새로고침 버튼 ==================== */
@@ -996,10 +836,6 @@ export default {
 @media (max-width: 720px) {
   .recordings-page-body {
     padding: 20px 16px;
-  }
-
-  .topbar {
-    padding: 0 16px;
   }
 
   /* 좁은 화면에서 날짜/확장자 열 숨김 */
