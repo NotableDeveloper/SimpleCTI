@@ -13,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import simple.simple_cti.ami.AmiConnectionManager;
 import simple.simple_cti.ami.OutboundCallCommand;
+import simple.simple_cti.ami.RecordingEventListener;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -35,6 +36,9 @@ class DialControllerTest {
 
     @MockitoBean
     private AmiConnectionManager amiConnectionManager;
+
+    @MockitoBean
+    private RecordingEventListener recordingEventListener;
 
     private ManagerConnection managerConnection;
 

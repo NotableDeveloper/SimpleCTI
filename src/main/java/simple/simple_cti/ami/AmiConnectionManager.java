@@ -1,8 +1,7 @@
 package simple.simple_cti.ami;
 
+import lombok.extern.slf4j.Slf4j;
 import org.asteriskjava.manager.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
@@ -12,9 +11,9 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 
+@Slf4j
 @Component
 public class AmiConnectionManager {
-    private final Logger logger = LoggerFactory.getLogger(AmiConnectionManager.class);
     private ManagerConnection managerConnection;
     private final ApplicationContext context;
 
@@ -37,9 +36,9 @@ public class AmiConnectionManager {
             ManagerConnectionFactory factory = new ManagerConnectionFactory(host, username, password);
             this.managerConnection = factory.createManagerConnection();
             managerConnection.login();
-            logger.info("AMI connection process initiated by AmiConnectionManager.");
+            log.info("AMI connection process initiated by AmiConnectionManager.");
         } catch (Exception e) {
-            logger.error("AmiConnectionManager failed to connect to Asterisk. Shutting down application.", e);
+            log.error("AmiConnectionManager failed to connect to Asterisk. Shutting down application.", e);
             SpringApplication.exit(context, () -> 1);
             System.exit(1);
         }

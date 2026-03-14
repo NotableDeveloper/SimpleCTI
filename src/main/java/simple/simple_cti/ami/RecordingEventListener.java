@@ -2,6 +2,7 @@ package simple.simple_cti.ami;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 import org.asteriskjava.manager.ManagerEventListener;
 import org.asteriskjava.manager.action.GetVarAction;
 import org.asteriskjava.manager.action.MixMonitorAction;
@@ -9,8 +10,6 @@ import org.asteriskjava.manager.event.BridgeEnterEvent;
 import org.asteriskjava.manager.event.HangupEvent;
 import org.asteriskjava.manager.event.ManagerEvent;
 import org.asteriskjava.manager.response.ManagerResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.text.SimpleDateFormat;
@@ -18,9 +17,9 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+@Slf4j
 @Component
 public class RecordingEventListener implements ManagerEventListener {
-    private static final Logger logger = LoggerFactory.getLogger(RecordingEventListener.class);
     private final AmiConnectionManager amiConnectionManager;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -37,9 +36,9 @@ public class RecordingEventListener implements ManagerEventListener {
     public void init() {
         if (amiConnectionManager.getManagerConnection() != null) {
             amiConnectionManager.getManagerConnection().addEventListener(this);
-            logger.info("RecordingEventListener registered to AmiConnectionManager.");
+            log.info("RecordingEventListener registered to AmiConnectionManager.");
         } else {
-            logger.warn("AmiConnectionManager connection is null. RecordingEventListener NOT registered.");
+            log.warn("AmiConnectionManager connection is null. RecordingEventListener NOT registered.");
         }
     }
     
@@ -53,6 +52,7 @@ public class RecordingEventListener implements ManagerEventListener {
         if (event instanceof BridgeEnterEvent) {
             BridgeEnterEvent bridgeEvent = (BridgeEnterEvent) event;
             String channel = bridgeEvent.getChannel();
+            log.debug("BridgeEnterEvent received for channel {}", channel);
 
             if (channel != null && agentAccount != null && channel.contains(agentAccount)) {
                 activeAgentChannel = channel;
@@ -84,7 +84,7 @@ public class RecordingEventListener implements ManagerEventListener {
             String value = response.getAttribute("Value");
             return "true".equalsIgnoreCase(value);
         } catch (Exception e) {
-            logger.warn("Failed to check recording variable for channel {}", channel, e);
+            log.warn("Failed to check recording variable for channel {}", channel, e);
             return false;
         }
     }
@@ -98,12 +98,12 @@ public class RecordingEventListener implements ManagerEventListener {
             String filename = "rec-" + timestamp + "-" + safeChannel + ".wav";
 
             MixMonitorAction mixMonitorAction = new MixMonitorAction(channel, filename);
-            logger.info("Starting recording for channel {}: {}", channel, filename);
+            log.info("Starting recording for channel {}: {}", channel, filename);
             
             amiConnectionManager.getManagerConnection().sendAction(mixMonitorAction);
             
         } catch (Exception e) {
-            logger.error("Failed to start recording for channel {}", channel, e);
+            log.error("Failed to start recording for channel {}", channel, e);
         }
     }
 }

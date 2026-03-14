@@ -1,18 +1,16 @@
 package simple.simple_cti.service;
 
 import com.jcraft.jsch.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.OutputStream;
 import java.util.Properties;
 
+@Slf4j
 @Service
 public class RecordingService {
-    
-    private static final Logger logger = LoggerFactory.getLogger(RecordingService.class);
 
     @Value("${sftp.host}")
     private String host;
@@ -55,11 +53,12 @@ public class RecordingService {
             }
             
             String fullPath = path + filename;
-            logger.info("Downloading file via SFTP: {}", fullPath);
+            log.info("Downloading recording file: {}", filename);
+            log.debug("Resolved SFTP path: {}", fullPath);
             sftpChannel.get(fullPath, outputStream);
-            
+
         } catch (Exception e) {
-            logger.error("SFTP Download failed", e);
+            log.error("SFTP download failed for file {}", filename, e);
             throw e;
         } finally {
             closeChannel(sftpChannel, session);
@@ -83,14 +82,16 @@ public class RecordingService {
                 path = "";
             }
 
+            log.debug("Listing recordings from SFTP path: {}", path);
             java.util.Vector<ChannelSftp.LsEntry> entries = sftpChannel.ls(path + "*.wav");
             for (ChannelSftp.LsEntry entry : entries) {
                 if (!entry.getAttrs().isDir()) {
                     fileList.add(entry.getFilename());
                 }
             }
+            log.info("Listed {} recording(s) from {}", fileList.size(), path);
         } catch (Exception e) {
-            logger.error("SFTP List failed", e);
+            log.error("SFTP list failed for path {}", basePath, e);
             // Don't throw, just return empty list or handle gracefully? 
             // Better to throw so controller knows.
             throw e;

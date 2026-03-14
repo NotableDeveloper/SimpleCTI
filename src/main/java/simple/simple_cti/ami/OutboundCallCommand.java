@@ -1,18 +1,17 @@
 package simple.simple_cti.ami;
 
+import lombok.extern.slf4j.Slf4j;
 import org.asteriskjava.manager.ManagerConnection;
 import org.asteriskjava.manager.ManagerConnectionState;
 import org.asteriskjava.manager.action.OriginateAction;
 import org.asteriskjava.manager.response.ManagerResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class OutboundCallCommand {
-    private static final Logger logger = LoggerFactory.getLogger(OutboundCallCommand.class);
 
     private final AmiConnectionManager amiConnectionManager;
 
@@ -39,7 +38,7 @@ public class OutboundCallCommand {
         ManagerConnection connection = amiConnectionManager.getManagerConnection();
 
         if (connection == null || connection.getState() != ManagerConnectionState.CONNECTED) {
-            logger.error("AMI connection is not established or connected.");
+            log.error("AMI connection is not established or connected.");
             throw new IOException("AMI connection is not established or connected.");
         }
 
@@ -59,9 +58,10 @@ public class OutboundCallCommand {
             originateAction.setVariable("G_RECORD_CALL", "true");
         }
 
-        logger.info("Sending OriginateAction to Asterisk: {}", originateAction);
+        log.info("Originating call to {} (recording={})", targetNumber, recordingEnabled);
+        log.debug("OriginateAction details: {}", originateAction);
         ManagerResponse response = connection.sendAction(originateAction);
-        logger.info("Received response for OriginateAction: {}", response);
+        log.debug("OriginateAction response: {}", response);
 
         return response;
     }
