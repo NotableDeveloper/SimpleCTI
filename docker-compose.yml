@@ -8,6 +8,7 @@ services:
       - ./asterisk/etc/pjsip.conf:/etc/asterisk/pjsip.conf:ro
       - ./asterisk/etc/extensions.conf:/etc/asterisk/extensions.conf:ro
       - ./asterisk/etc/http.conf:/etc/asterisk/http.conf:ro
+      - ./asterisk/etc/cdr_manager.conf:/etc/asterisk/cdr_manager.conf:ro
       - asterisk_recordings:/var/spool/asterisk/monitor
     restart: unless-stopped
 
@@ -59,6 +60,21 @@ services:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
 
+  mariadb:
+    image: mariadb:10.11
+    container_name: mariadb
+    network_mode: host
+    environment:
+      MARIADB_ROOT_PASSWORD: root_pw
+      MARIADB_DATABASE: simple_cti
+      MARIADB_USER: simple_cti_user
+      MARIADB_PASSWORD: simple_cti_pw
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./mariadb/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+
 volumes:
   softphone_node_modules:
   asterisk_recordings:
+  mariadb_data:
