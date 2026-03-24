@@ -4,6 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import simple.simple_cti.domain.Cdr;
 import simple.simple_cti.repository.CdrRepository;
 
@@ -77,31 +80,33 @@ class CdrServiceTest {
     }
 
     // -------------------------------------------------------------------------
-    // findAll()
+    // findByFilter()
     // -------------------------------------------------------------------------
 
     @Test
-    void findAll_저장된_CDR을_최신순으로_반환한다() {
+    void findByFilter_결과가_있으면_Page를_반환한다() {
         // Given
         Cdr cdr1 = buildCdr("id1");
         Cdr cdr2 = buildCdr("id2");
-        when(cdrRepository.findAllByOrderByCalldateDesc()).thenReturn(List.of(cdr1, cdr2));
+        Page<Cdr> page = new PageImpl<>(List.of(cdr1, cdr2), PageRequest.of(0, 20), 2);
+        when(cdrRepository.findByFilter(any(), any(), any())).thenReturn(page);
 
         // When
-        List<Cdr> result = cdrService.findAll();
+        Page<Cdr> result = cdrService.findByFilter("", "", 0);
 
         // Then
-        assertEquals(2, result.size());
-        verify(cdrRepository).findAllByOrderByCalldateDesc();
+        assertEquals(2, result.getTotalElements());
+        verify(cdrRepository).findByFilter("", "", PageRequest.of(0, 20));
     }
 
     @Test
-    void findAll_CDR이_없으면_빈_목록을_반환한다() {
+    void findByFilter_CDR이_없으면_빈_Page를_반환한다() {
         // Given
-        when(cdrRepository.findAllByOrderByCalldateDesc()).thenReturn(List.of());
+        Page<Cdr> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+        when(cdrRepository.findByFilter(any(), any(), any())).thenReturn(emptyPage);
 
         // When
-        List<Cdr> result = cdrService.findAll();
+        Page<Cdr> result = cdrService.findByFilter("", "", 0);
 
         // Then
         assertTrue(result.isEmpty());

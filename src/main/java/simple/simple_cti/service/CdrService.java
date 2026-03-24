@@ -1,11 +1,11 @@
 package simple.simple_cti.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import simple.simple_cti.domain.Cdr;
 import simple.simple_cti.repository.CdrRepository;
-
-import java.util.List;
 
 /**
  * CDR(통화 이력) 저장 및 조회 비즈니스 서비스.
@@ -14,6 +14,9 @@ import java.util.List;
 @Slf4j
 @Service
 public class CdrService {
+
+    /** 한 페이지당 표시할 CDR 건수 */
+    private static final int PAGE_SIZE = 20;
 
     private final CdrRepository cdrRepository;
 
@@ -29,7 +32,6 @@ public class CdrService {
      */
     public void save(Cdr cdr) {
         try {
-            // uniqueid 중복 여부 사전 확인
             if (cdrRepository.findByUniqueid(cdr.getUniqueid()).isPresent()) {
                 log.warn("CDR with uniqueid {} already exists. Skipping.", cdr.getUniqueid());
                 return;
@@ -42,11 +44,18 @@ public class CdrService {
     }
 
     /**
-     * 전체 CDR을 통화 시작 시각 기준 최신순으로 반환한다.
+     * 번호(src 또는 dst)와 상태(disposition)로 필터링하여 최신순 페이지를 반환한다.
+     * number 또는 disposition이 null이면 빈 문자열로 처리하여 전체 조회한다.
      *
-     * @return CDR 목록 (최신순)
+     * @param number      발신·수신번호 검색어 (null 또는 빈 문자열이면 전체)
+     * @param disposition 상태 필터 (null 또는 빈 문자열이면 전체)
+     * @param page        0-based 페이지 번호
+     * @return 필터링된 CDR 페이지
      */
-    public List<Cdr> findAll() {
-        return cdrRepository.findAllByOrderByCalldateDesc();
+    public Page<Cdr> findByFilter(String number, String disposition, int page) {
+        String safeNumber      = (number      != null) ? number.trim()      : "";
+        String safeDisposition = (disposition != null) ? disposition.trim() : "";
+        log.debug("CDR filter query: number='{}', disposition='{}', page={}", safeNumber, safeDisposition, page);
+        return cdrRepository.findByFilter(safeNumber, safeDisposition, PageRequest.of(page, PAGE_SIZE));
     }
 }

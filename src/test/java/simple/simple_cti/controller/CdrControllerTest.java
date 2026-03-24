@@ -3,6 +3,9 @@ package simple.simple_cti.controller;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import simple.simple_cti.ami.CdrEventListener;
@@ -14,6 +17,9 @@ import simple.simple_cti.service.CdrService;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -48,33 +54,38 @@ class CdrControllerTest {
     void list_CDR이_존재하면_success_true와_목록을_반환한다() throws Exception {
         // Given
         Cdr cdr = buildCdr("1234567890.1", "01012345678", "01098765432");
-        when(cdrService.findAll()).thenReturn(List.of(cdr));
+        Page<Cdr> page = new PageImpl<>(List.of(cdr), PageRequest.of(0, 20), 1);
+        when(cdrService.findByFilter(anyString(), anyString(), anyInt())).thenReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/cdr/list"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data[0].uniqueid").value("1234567890.1"));
+                .andExpect(jsonPath("$.data[0].uniqueid").value("1234567890.1"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
     void list_CDR이_없으면_success_true와_빈_배열을_반환한다() throws Exception {
         // Given
-        when(cdrService.findAll()).thenReturn(List.of());
+        Page<Cdr> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+        when(cdrService.findByFilter(anyString(), anyString(), anyInt())).thenReturn(emptyPage);
 
         // When & Then
         mockMvc.perform(get("/api/cdr/list"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data").isEmpty());
+                .andExpect(jsonPath("$.data").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test
     void list_service_예외_발생시_success_false를_반환한다() throws Exception {
         // Given
-        when(cdrService.findAll()).thenThrow(new RuntimeException("DB error"));
+        when(cdrService.findByFilter(anyString(), anyString(), anyInt()))
+                .thenThrow(new RuntimeException("DB error"));
 
         // When & Then
         mockMvc.perform(get("/api/cdr/list"))
