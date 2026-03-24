@@ -14,6 +14,7 @@ services:
 
   sipp-mock:
     image: ctaloi/sipp
+    platform: linux/amd64
     container_name: sipp-mock
     network_mode: host
     # UAS 모드: 모든 INVITE를 즉시 200 OK로 응답 (5070 포트)
@@ -37,6 +38,7 @@ services:
 
   sftp-server:
     image: atmoz/sftp
+    platform: linux/amd64
     container_name: sftp-server
     network_mode: host
     # ippbx:tosemqkrtm → /home/ippbx/monitor/ 에 recordings 볼륨 마운트
