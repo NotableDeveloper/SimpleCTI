@@ -73,6 +73,22 @@
           </span>
           <span>녹음 파일</span>
         </button>
+
+        <!-- 통화 이력 네비게이션 항목 -->
+        <button
+          type="button"
+          class="nav-item"
+          :class="{ active: currentView === 'cdr' }"
+          @click="currentView = 'cdr'"
+        >
+          <span class="nav-icon">
+            <!-- 통화 이력 아이콘 -->
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-6-6zm-1 14H7v-2h5v2zm3-4H7v-2h8v2zm0-4H7V7h8v2z"/>
+            </svg>
+          </span>
+          <span>통화 이력</span>
+        </button>
       </nav>
 
       <div class="sidebar-footer">
@@ -86,8 +102,8 @@
       <!-- 상단 바 -->
       <header class="topbar">
         <div class="topbar-title">
-          <span class="topbar-heading">{{ currentView === 'status' ? '시스템 대시보드' : (currentView === 'dial' ? '수동 콜' : '녹음 파일 관리') }}</span>
-          <span class="topbar-breadcrumb">Simple CTI &rsaquo; {{ currentView === 'status' ? 'Dashboard' : (currentView === 'dial' ? 'Dialer' : 'Recordings') }}</span>
+          <span class="topbar-heading">{{ topbarTitle }}</span>
+          <span class="topbar-breadcrumb">Simple CTI &rsaquo; {{ topbarBreadcrumb }}</span>
         </div>
         <div class="topbar-actions">
           <!-- 새로고침 버튼: checkHealth 메서드 호출 -->
@@ -121,6 +137,9 @@
         <Recordings @back="currentView = 'status'" />
       </main>
 
+      <!-- 통화 이력(CDR) 뷰: 사이드바와 함께 main-content 내에 렌더링 -->
+      <CallHistory v-if="currentView === 'cdr'" />
+
     </div>
     <!-- /.main-content -->
 
@@ -131,17 +150,19 @@
 import Dialer from './components/Dialer.vue'
 import Recordings from './components/Recordings.vue'
 import DashboardView from './components/dashboard/DashboardView.vue'
+import CallHistory from './components/CallHistory.vue'
 
 export default {
   name: 'App',
   components: {
     Dialer,
     Recordings,
-    DashboardView
+    DashboardView,
+    CallHistory
   },
   data() {
     return {
-      currentView: 'status', // 'status' | 'dial' | 'recordings'
+      currentView: 'status', // 'status' | 'dial' | 'recordings' | 'cdr'
       refreshInterval: null,
       lastUpdated: null,
       appStatus: {
@@ -164,6 +185,16 @@ export default {
   beforeUnmount() {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
+    }
+  },
+  computed: {
+    topbarTitle() {
+      const titles = { status: '시스템 대시보드', dial: '수동 콜', recordings: '녹음 파일 관리', cdr: '통화 이력' }
+      return titles[this.currentView] ?? ''
+    },
+    topbarBreadcrumb() {
+      const crumbs = { status: 'Dashboard', dial: 'Dialer', recordings: 'Recordings', cdr: 'Call History' }
+      return crumbs[this.currentView] ?? ''
     }
   },
   methods: {
