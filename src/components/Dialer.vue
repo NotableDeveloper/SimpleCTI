@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <!-- 2단 레이아웃: 다이얼러(왼쪽) + SIP 로그(오른쪽) -->
+      <!-- 3단 레이아웃: 다이얼러(왼쪽) + 채널 모니터(중간) + SIP 로그(오른쪽) -->
       <div class="dual-layout">
 
         <!-- ===== 왼쪽: 다이얼러 카드 ===== -->
@@ -73,6 +73,12 @@
         </div>
         <!-- /dialer-card -->
 
+        <!-- ===== 중간: 채널 모니터 패널 ===== -->
+        <ChannelMonitorPanel
+          :agent-account="agentAccount"
+          :call-status="callStatus"
+        />
+
         <!-- ===== 오른쪽: SIP 로그 패널 ===== -->
         <SipLogPanel ref="sipLogPanel" :call-status="callStatus" />
 
@@ -96,12 +102,13 @@ import SipLogPanel from './dialer/SipLogPanel.vue';
 import DialerDisplay from './dialer/DialerDisplay.vue';
 import DialerKeypad from './dialer/DialerKeypad.vue';
 import DialerActions from './dialer/DialerActions.vue';
+import ChannelMonitorPanel from './dialer/ChannelMonitorPanel.vue';
 import AppTopbar from '@/components/common/AppTopbar.vue';
 
 export default {
   name: 'DialerPage',
   emits: ['back'],
-  components: { SipLogPanel, DialerDisplay, DialerKeypad, DialerActions, AppTopbar },
+  components: { SipLogPanel, DialerDisplay, DialerKeypad, DialerActions, ChannelMonitorPanel, AppTopbar },
   setup() {
     // SipLogPanel 컴포넌트 ref: handleSipLogConnector 접근용
     const sipLogPanel = ref(null);
@@ -120,7 +127,10 @@ export default {
   data() {
     return {
       targetNumber: '',
-      recordingEnabled: false
+      recordingEnabled: false,
+      // application.properties의 outbound.account와 동일한 값
+      // ChannelMonitorPanel에서 상담사 채널 식별에 사용됩니다.
+      agentAccount: process.env.VUE_APP_AGENT_ACCOUNT || '5005'
     }
   },
   methods: {
@@ -256,8 +266,8 @@ export default {
 
 .dual-layout {
   display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 24px;
+  grid-template-columns: 380px 340px 1fr;
+  gap: 20px;
   align-items: start;
   flex: 1;
 }
@@ -305,10 +315,28 @@ export default {
 
 /* ==================== 반응형 ==================== */
 
-/* 1024px 이하: 2단 레이아웃 -> 1단 세로 배치 */
+/* 1280px 이하: 채널 모니터를 아래로 내림 */
+@media (max-width: 1280px) {
+  .dual-layout {
+    grid-template-columns: 380px 1fr;
+    grid-template-rows: auto auto;
+  }
+  /* 채널 모니터 패널: 2행 전체 */
+  .dual-layout > :nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* 1024px 이하: 전체 1단 세로 배치 */
 @media (max-width: 1024px) {
   .dual-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .dual-layout > :nth-child(2) {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .dialer-card {
