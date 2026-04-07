@@ -4,7 +4,6 @@
     <!-- ==================== 패널 헤더 ==================== -->
     <div class="monitor-header">
       <div class="monitor-header-left">
-        <!-- 라이브 아이콘 -->
         <div class="monitor-icon" :class="{ 'monitor-icon--active': isBridged }">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round">
@@ -13,209 +12,94 @@
         </div>
         <div class="monitor-title-group">
           <span class="monitor-title">채널 모니터</span>
-          <span class="monitor-subtitle">실시간 통화 채널 상태</span>
+          <span class="monitor-subtitle">실시간 연결 상태</span>
         </div>
-        <!-- SSE 연결 상태 배지 -->
+      </div>
+      <!-- SSE 배지 및 초기화 버튼 -->
+      <div class="monitor-header-right">
         <span class="sse-badge" :class="sseConnected ? 'sse-badge--on' : 'sse-badge--off'">
-          <span class="sse-dot"></span>
           {{ sseConnected ? 'LIVE' : 'OFF' }}
         </span>
+        <button class="monitor-clear-btn" @click="clearChannels">초기화</button>
       </div>
-      <!-- 채널 맵 비우기 버튼 -->
-      <button class="monitor-clear-btn" @click="clearChannels" title="채널 목록 초기화">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-        </svg>
-        초기화
-      </button>
-    </div>
-    <!-- /패널 헤더 -->
-
-    <!-- ==================== 통화 연결 배너 ==================== -->
-    <div v-if="isBridged" class="bridge-banner">
-      <span class="bridge-dot"></span>
-      <span>통화 연결됨</span>
-      <span class="bridge-id">Bridge: {{ agentChannel?.bridgeUniqueId || customerChannel?.bridgeUniqueId }}</span>
     </div>
 
-    <!-- ==================== 채널 정보 그리드 ==================== -->
-    <div class="channel-grid">
+    <!-- ==================== 메인 콘텐츠 (세로 배치) ==================== -->
+    <div class="monitor-content">
 
-      <!-- 고객 채널 카드 -->
-      <div class="channel-card" :class="getCardClass(customerChannel)">
-        <div class="channel-card-header">
-          <div class="channel-role-badge role-customer">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            고객
+      <!-- [1] 고객 채널 카드 (TOP) -->
+      <div class="channel-card customer-card" :class="getCardClass(customerChannel)">
+        <div class="role-tag role-customer">고객 (External)</div>
+        <div v-if="customerChannel" class="card-inner">
+          <div class="main-info">
+            <span class="number">{{ customerChannel.callerIdNum || '-' }}</span>
+            <span class="state-label" :class="getStateClass(customerChannel.channelStateDesc)">
+              {{ getStateLabel(customerChannel.channelStateDesc) }}
+            </span>
           </div>
-          <span v-if="customerChannel" class="channel-state-badge"
-                :class="getStateClass(customerChannel.channelStateDesc)">
-            {{ getStateLabel(customerChannel.channelStateDesc) }}
-          </span>
-        </div>
-
-        <div v-if="customerChannel" class="channel-card-body">
-          <!-- 발신 번호 -->
-          <div class="channel-field">
-            <span class="field-label">번호</span>
-            <span class="field-value field-number">{{ customerChannel.callerIdNum || '-' }}</span>
-          </div>
-          <!-- 채널명 -->
-          <div class="channel-field">
-            <span class="field-label">채널</span>
-            <span class="field-value field-mono">{{ customerChannel.channel || '-' }}</span>
-          </div>
-          <!-- Unique ID -->
-          <div class="channel-field">
-            <span class="field-label">Unique ID</span>
-            <span class="field-value field-mono field-dim">{{ customerChannel.uniqueId || '-' }}</span>
-          </div>
-          <!-- 연결 상대 -->
-          <div class="channel-field" v-if="customerChannel.connectedLineNum">
-            <span class="field-label">연결 번호</span>
-            <span class="field-value">{{ customerChannel.connectedLineNum }}</span>
+          <div class="sub-info">
+            <span class="channel-name">{{ customerChannel.channel }}</span>
           </div>
         </div>
-
-        <!-- 채널 없음 상태 -->
-        <div v-else class="channel-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-               stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span>고객 채널 없음</span>
-        </div>
+        <div v-else class="card-empty">고객 채널 대기 중...</div>
       </div>
-      <!-- /고객 채널 -->
 
-      <!-- 연결 화살표 -->
-      <div class="channel-connector" :class="{ 'channel-connector--active': isBridged }">
-        <div class="connector-line"></div>
-        <div class="connector-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
-            <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-            <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
-            <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+      <!-- [2] 연결 커넥터 (VERTICAL) -->
+      <div class="v-connector" :class="{ 'v-connector--active': isBridged }">
+        <div class="v-line"></div>
+        <div class="v-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/>
           </svg>
         </div>
-        <div class="connector-line"></div>
+        <div class="v-line"></div>
       </div>
 
-      <!-- 상담사 채널 카드 -->
-      <div class="channel-card" :class="getCardClass(agentChannel)">
-        <div class="channel-card-header">
-          <div class="channel-role-badge role-agent">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
-              <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
-            </svg>
-            상담사
+      <!-- [3] 상담사 채널 카드 (BOTTOM) -->
+      <div class="channel-card agent-card" :class="getCardClass(agentChannel)">
+        <div class="role-tag role-agent">상담사 (Agent)</div>
+        <div v-if="agentChannel" class="card-inner">
+          <div class="main-info">
+            <span class="number">{{ agentChannel.callerIdNum || '-' }}</span>
+            <span class="state-label" :class="getStateClass(agentChannel.channelStateDesc)">
+              {{ getStateLabel(agentChannel.channelStateDesc) }}
+            </span>
           </div>
-          <span v-if="agentChannel" class="channel-state-badge"
-                :class="getStateClass(agentChannel.channelStateDesc)">
-            {{ getStateLabel(agentChannel.channelStateDesc) }}
-          </span>
-        </div>
-
-        <div v-if="agentChannel" class="channel-card-body">
-          <!-- 내선 번호 -->
-          <div class="channel-field">
-            <span class="field-label">내선</span>
-            <span class="field-value field-number">{{ agentChannel.callerIdNum || '-' }}</span>
-          </div>
-          <!-- 채널명 -->
-          <div class="channel-field">
-            <span class="field-label">채널</span>
-            <span class="field-value field-mono">{{ agentChannel.channel || '-' }}</span>
-          </div>
-          <!-- Unique ID -->
-          <div class="channel-field">
-            <span class="field-label">Unique ID</span>
-            <span class="field-value field-mono field-dim">{{ agentChannel.uniqueId || '-' }}</span>
-          </div>
-          <!-- 연결 상대 -->
-          <div class="channel-field" v-if="agentChannel.connectedLineNum">
-            <span class="field-label">연결 번호</span>
-            <span class="field-value">{{ agentChannel.connectedLineNum }}</span>
+          <div class="sub-info">
+            <span class="channel-name">{{ agentChannel.channel }}</span>
           </div>
         </div>
-
-        <!-- 채널 없음 상태 -->
-        <div v-else class="channel-empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-               stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span>상담사 채널 없음</span>
-        </div>
+        <div v-else class="card-empty">상담사 채널 대기 중...</div>
       </div>
-      <!-- /상담사 채널 -->
 
     </div>
-    <!-- /channel-grid -->
 
-    <!-- ==================== 공통 채널 정보 (Linked ID) ==================== -->
-    <div v-if="activeLinkedId" class="linked-id-bar">
-      <span class="linked-id-label">Linked ID</span>
-      <span class="linked-id-value">{{ activeLinkedId }}</span>
-    </div>
-
-    <!-- ==================== Raw 채널 목록 (디버그) ==================== -->
-    <details class="raw-channels" v-if="Object.keys(channelMap).length > 0">
-      <summary class="raw-channels-summary">
-        전체 채널 ({{ Object.keys(channelMap).length }}개)
-      </summary>
-      <div class="raw-channel-list">
-        <div
-          v-for="(ch, uid) in channelMap"
-          :key="uid"
-          class="raw-channel-item"
-        >
-          <span class="raw-channel-type" :class="getStateClass(ch.channelStateDesc)">
-            {{ ch.eventType }}
-          </span>
-          <span class="raw-channel-name">{{ ch.channel }}</span>
-          <span class="raw-channel-state">{{ ch.channelStateDesc }}</span>
-          <span class="raw-channel-uid">{{ ch.uniqueId }}</span>
-        </div>
+    <!-- ==================== 푸터 (통화 상세 정보) ==================== -->
+    <div v-if="activeLinkedId" class="monitor-footer">
+      <div class="footer-row">
+        <span class="footer-label">Linked ID</span>
+        <span class="footer-value">{{ activeLinkedId }}</span>
       </div>
-    </details>
+      <div v-if="isBridged" class="footer-row">
+        <span class="footer-label">Bridge ID</span>
+        <span class="footer-value">{{ agentChannel?.bridgeUniqueId || customerChannel?.bridgeUniqueId }}</span>
+      </div>
+    </div>
 
   </div>
 </template>
 
 <script setup>
+import { onMounted, onUnmounted } from 'vue';
 import { useChannelMonitor } from '@/composables/useChannelMonitor';
 
 const props = defineProps({
-  /** application.properties의 outbound.account 값 (예: '5005') */
-  agentAccount: {
-    type: String,
-    default: ''
-  },
-  /** SIP callStatus — InCall 진입 시 SSE 연결 */
-  callStatus: {
-    type: String,
-    default: 'Idle'
-  }
+  agentAccount: { type: String, default: '5005' },
+  callStatus: { type: String, default: 'Idle' }
 });
 
 const {
   sseConnected,
-  channelMap,
   activeLinkedId,
   agentChannel,
   customerChannel,
@@ -227,539 +111,125 @@ const {
   getStateClass,
 } = useChannelMonitor(props.agentAccount);
 
-// 컴포넌트 마운트 시 SSE 즉시 연결
-connectSse();
+onMounted(() => {
+  connectSse();
+});
 
-// ==================== 유틸 ====================
+onUnmounted(() => {
+  disconnectSse();
+});
 
-/** 채널 상태에 따른 카드 CSS 클래스 반환 */
 function getCardClass(channel) {
-  if (!channel) return 'channel-card--empty';
-  if (channel.bridgeUniqueId) return 'channel-card--bridged';
-  if (['Ring', 'Ringing', 'Dialing'].includes(channel.channelStateDesc)) return 'channel-card--ringing';
-  if (channel.channelStateDesc === 'Up') return 'channel-card--up';
-  return '';
+  if (!channel) return 'card--empty';
+  if (channel.bridgeUniqueId) return 'card--bridged';
+  if (channel.channelStateDesc === 'Up') return 'card--up';
+  return 'card--active';
 }
-
-// 부모(Dialer.vue)에서 connectSse/disconnectSse를 제어할 수 있도록 노출
-defineExpose({ connectSse, disconnectSse, clearChannels });
 </script>
 
 <style scoped>
-/* ==================== 패널 래퍼 ==================== */
-
 .channel-monitor-panel {
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
+  background: #fdfdfd;
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  height: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* ==================== 패널 헤더 ==================== */
-
+/* 헤더 */
 .monitor-header {
-  padding: 14px 18px;
-  background: var(--color-card);
-  border-bottom: 1px solid var(--color-border);
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-shrink: 0;
+  background: white;
+  border-radius: 16px 16px 0 0;
 }
+.monitor-header-left { display: flex; align-items: center; gap: 10px; }
+.monitor-icon { width: 32px; height: 32px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.monitor-icon--active { background: #dcfce7; color: #10b981; }
+.monitor-icon svg { width: 16px; height: 16px; }
+.monitor-title { font-size: 14px; font-weight: 800; color: #1e293b; display: block; }
+.monitor-subtitle { font-size: 11px; color: #64748b; }
+.monitor-header-right { display: flex; align-items: center; gap: 8px; }
 
-.monitor-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.sse-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.sse-badge--on { background: #dcfce7; color: #15803d; }
+.sse-badge--off { background: #f1f5f9; color: #94a3b8; }
+.monitor-clear-btn { font-size: 11px; color: #94a3b8; border: none; background: none; cursor: pointer; }
+.monitor-clear-btn:hover { color: #ef4444; }
 
-.monitor-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background 0.2s;
-}
-
-.monitor-icon--active {
-  background: #ecfdf5;
-}
-
-.monitor-icon svg {
-  width: 15px;
-  height: 15px;
-  color: #6b7280;
-  transition: color 0.2s;
-}
-
-.monitor-icon--active svg {
-  color: #059669;
-}
-
-.monitor-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.monitor-title {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.monitor-subtitle {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-}
-
-/* SSE 배지 */
-.sse-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.sse-badge--on {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
-}
-
-.sse-badge--off {
-  background: #f3f4f6;
-  color: #9ca3af;
-  border: 1px solid #e5e7eb;
-}
-
-.sse-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: ssePulse 1.4s ease-in-out infinite;
-}
-
-.sse-badge--off .sse-dot {
-  animation: none;
-}
-
-@keyframes ssePulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-/* 초기화 버튼 */
-.monitor-clear-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 11px;
-  border-radius: 7px;
-  border: 1px solid var(--color-border);
-  background: #f9fafb;
-  color: var(--color-text-secondary);
-  font-size: 11.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: inherit;
-}
-
-.monitor-clear-btn:hover {
-  border-color: var(--color-error-border, #fca5a5);
-  color: var(--color-error, #dc2626);
-  background: var(--color-error-bg, #fef2f2);
-}
-
-.monitor-clear-btn svg {
-  width: 11px;
-  height: 11px;
-}
-
-/* ==================== 브리지 배너 ==================== */
-
-.bridge-banner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: linear-gradient(90deg, #ecfdf5, #f0fdf4);
-  border-bottom: 1px solid #a7f3d0;
-  font-size: 12px;
-  font-weight: 600;
-  color: #065f46;
-}
-
-.bridge-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-  animation: ssePulse 1.2s ease-in-out infinite;
-}
-
-.bridge-id {
-  margin-left: auto;
-  font-size: 10px;
-  font-weight: 500;
-  color: #6ee7b7;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  background: rgba(0,0,0,0.05);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-/* ==================== 채널 그리드 ==================== */
-
-.channel-grid {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 0;
+/* 메인 콘텐츠 영역 */
+.monitor-content {
   padding: 16px;
-  align-items: stretch;
-}
-
-/* ==================== 채널 카드 ==================== */
-
-.channel-card {
-  border: 1.5px solid var(--color-border);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  background: #fafbfc;
-  min-height: 140px;
-  display: flex;
-  flex-direction: column;
-}
-
-.channel-card--bridged {
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
-  background: #f0fdf4;
-}
-
-.channel-card--ringing {
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
-  background: #fffbeb;
-}
-
-.channel-card--up {
-  border-color: #6366f1;
-  background: #f5f3ff;
-}
-
-.channel-card--empty {
-  border-color: var(--color-border);
-  background: #f9fafb;
-}
-
-/* 카드 헤더 */
-.channel-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.7);
-}
-
-.channel-role-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
-}
-
-.channel-role-badge svg {
-  width: 13px;
-  height: 13px;
-}
-
-.role-customer {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.role-agent {
-  background: #f5f3ff;
-  color: #6d28d9;
-}
-
-/* 상태 배지 */
-.channel-state-badge {
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 10px;
-}
-
-.state-up {
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
-}
-
-.state-ringing {
-  background: #fffbeb;
-  color: #92400e;
-  border: 1px solid #fde68a;
-}
-
-.state-down {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
-}
-
-.state-other {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #e5e7eb;
-}
-
-.state-unknown {
-  background: #f3f4f6;
-  color: #9ca3af;
-  border: 1px solid #e5e7eb;
-}
-
-/* 카드 본문 */
-.channel-card-body {
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  flex: 1;
-}
-
-.channel-field {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.field-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  width: 54px;
-  flex-shrink: 0;
-}
-
-.field-value {
-  font-size: 12px;
-  color: var(--color-text-primary);
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.field-number {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-}
-
-.field-mono {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: 10.5px;
-}
-
-.field-dim {
-  color: var(--color-text-secondary);
-}
-
-/* 채널 없음 */
-.channel-empty {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 20px;
-  color: #9ca3af;
-}
-
-.channel-empty svg {
-  width: 24px;
-  height: 24px;
-  opacity: 0.3;
-}
-
-.channel-empty span {
-  font-size: 11.5px;
-  opacity: 0.6;
-}
-
-/* ==================== 채널 연결 표시 ==================== */
-
-.channel-connector {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
   gap: 4px;
-  padding: 0 4px;
 }
 
-.connector-line {
-  flex: 1;
-  width: 2px;
-  background: var(--color-border);
-  border-radius: 1px;
-  transition: background 0.2s;
-}
-
-.channel-connector--active .connector-line {
-  background: linear-gradient(180deg, #10b981, #059669);
-}
-
-.connector-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #f3f4f6;
-  border: 1.5px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+/* 공통 카드 스타일 */
+.channel-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+  background: white;
   transition: all 0.2s;
 }
+.card--empty { background: #f8fafc; border-style: dashed; }
+.card--bridged { border-color: #10b981; background: #f0fdf4; box-shadow: 0 0 10px rgba(16, 185, 129, 0.05); }
+.card--up { border-color: #6366f1; background: #f5f3ff; }
 
-.channel-connector--active .connector-icon {
-  background: #ecfdf5;
-  border-color: #10b981;
-}
-
-.connector-icon svg {
-  width: 14px;
-  height: 14px;
-  color: #9ca3af;
-  transition: color 0.2s;
-}
-
-.channel-connector--active .connector-icon svg {
-  color: #059669;
-}
-
-/* ==================== Linked ID 바 ==================== */
-
-.linked-id-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: #f9fafb;
-  border-top: 1px solid var(--color-border);
-  font-size: 11px;
-}
-
-.linked-id-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.linked-id-value {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: 11px;
-  color: var(--color-text-primary);
-  font-weight: 600;
-}
-
-/* ==================== Raw 채널 목록 ==================== */
-
-.raw-channels {
-  border-top: 1px solid var(--color-border);
-}
-
-.raw-channels-summary {
-  padding: 8px 18px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  background: #f9fafb;
-  user-select: none;
-  list-style: none;
-}
-
-.raw-channels-summary::-webkit-details-marker { display: none; }
-
-.raw-channels-summary:hover {
-  color: var(--color-text-primary);
-}
-
-.raw-channel-list {
-  background: #f3f4f6;
-  padding: 6px 0;
-  max-height: 120px;
-  overflow-y: auto;
-}
-
-.raw-channel-item {
-  display: grid;
-  grid-template-columns: 90px 1fr 80px 100px;
-  gap: 8px;
-  padding: 4px 18px;
-  font-size: 10.5px;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  border-bottom: 1px solid rgba(0,0,0,0.04);
-  align-items: center;
-}
-
-.raw-channel-type {
-  font-weight: 700;
-  font-size: 9.5px;
-  padding: 1px 5px;
+.role-tag {
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
   border-radius: 4px;
-  text-align: center;
+  text-transform: uppercase;
 }
+.role-customer { background: #3b82f6; color: white; }
+.role-agent { background: #8b5cf6; color: white; }
 
-.raw-channel-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-text-primary);
-}
+.card-inner { display: flex; flex-direction: column; gap: 4px; }
+.main-info { display: flex; justify-content: space-between; align-items: center; }
+.number { font-size: 16px; font-weight: 800; font-family: monospace; color: #1e293b; }
+.state-label { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.state-up { background: #dcfce7; color: #15803d; }
+.state-ringing { background: #fef9c3; color: #854d0e; }
+.sub-info { font-size: 10px; color: #64748b; font-family: monospace; }
 
-.raw-channel-state {
-  color: var(--color-text-secondary);
-}
+.card-empty { height: 40px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #94a3b8; font-style: italic; }
 
-.raw-channel-uid {
-  color: #9ca3af;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* 세로 커넥터 */
+.v-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 40px;
 }
+.v-line { width: 2px; flex: 1; background: #e2e8f0; }
+.v-connector--active .v-line { background: #10b981; }
+.v-icon { width: 22px; height: 22px; border: 1px solid #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: white; margin: 2px 0; }
+.v-connector--active .v-icon { border-color: #10b981; color: #10b981; }
+.v-icon svg { width: 14px; height: 14px; }
+
+/* 푸터 */
+.monitor-footer {
+  padding: 10px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.footer-row { display: flex; justify-content: space-between; font-size: 10px; }
+.footer-label { color: #64748b; font-weight: 600; }
+.footer-value { color: #1e293b; font-family: monospace; font-weight: 600; }
 </style>
