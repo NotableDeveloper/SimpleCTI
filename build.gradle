@@ -43,7 +43,9 @@ tasks.named('test') {
 }
 
 tasks.named('jar') {
-    archiveFileName = 'simple_cti.jar'
+    // bootJar와 동일한 파일명 사용 시 plain jar가 나중에 실행되어 bootJar를 덮어씁니다.
+    // Spring Boot 실행 가능 JAR(bootJar)만 사용하므로 plain jar 태스크는 비활성화합니다.
+    enabled = false
 }
 
 tasks.named('bootJar') {
