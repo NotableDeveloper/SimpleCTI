@@ -90,20 +90,6 @@
           <span>통화 이력</span>
         </button>
 
-        <!-- ARS 편집 네비게이션 항목 -->
-        <button
-          type="button"
-          class="nav-item"
-          :class="{ active: currentView === 'ars' }"
-          @click="currentView = 'ars'"
-        >
-          <span class="nav-icon">
-            <!-- ARS 아이콘 -->
-            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
-            </svg>
-          </span>
-          <span>ARS 편집</span>
         </button>
       </nav>
 
@@ -156,9 +142,6 @@
       <!-- 통화 이력(CDR) 뷰: 사이드바와 함께 main-content 내에 렌더링 -->
       <CallHistory v-if="currentView === 'cdr'" />
 
-      <!-- ARS 편집 뷰: 사이드바와 함께 main-content 내에 렌더링 -->
-      <ArsEditor v-if="currentView === 'ars'" />
-
     </div>
     <!-- /.main-content -->
 
@@ -170,7 +153,6 @@ import Dialer from './components/Dialer.vue'
 import Recordings from './components/Recordings.vue'
 import DashboardView from './components/dashboard/DashboardView.vue'
 import CallHistory from './components/CallHistory.vue'
-import ArsEditor from './components/ars/ArsEditor.vue'
 
 export default {
   name: 'App',
@@ -178,12 +160,11 @@ export default {
     Dialer,
     Recordings,
     DashboardView,
-    CallHistory,
-    ArsEditor
+    CallHistory
   },
   data() {
     return {
-      currentView: 'status', // 'status' | 'dial' | 'recordings' | 'cdr' | 'ars'
+      currentView: 'status', // 'status' | 'dial' | 'recordings' | 'cdr'
       refreshInterval: null,
       lastUpdated: null,
       appStatus: {
@@ -210,11 +191,11 @@ export default {
   },
   computed: {
     topbarTitle() {
-      const titles = { status: '시스템 대시보드', dial: '수동 콜', recordings: '녹음 파일 관리', cdr: '통화 이력', ars: 'ARS 편집' }
+      const titles = { status: '시스템 대시보드', dial: '수동 콜', recordings: '녹음 파일 관리', cdr: '통화 이력' }
       return titles[this.currentView] ?? ''
     },
     topbarBreadcrumb() {
-      const crumbs = { status: 'Dashboard', dial: 'Dialer', recordings: 'Recordings', cdr: 'Call History', ars: 'ARS Editor' }
+      const crumbs = { status: 'Dashboard', dial: 'Dialer', recordings: 'Recordings', cdr: 'Call History' }
       return crumbs[this.currentView] ?? ''
     }
   },
